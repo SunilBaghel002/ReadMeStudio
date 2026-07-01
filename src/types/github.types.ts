@@ -103,19 +103,44 @@ export interface SectionConfig {
     hideBorder: boolean;
     showIcons: boolean;
     includeAllCommits: boolean;
+    hideRank?: boolean;
+    bgColor?: string;
+    titleColor?: string;
+    textColor?: string;
+    iconColor?: string;
+    borderColor?: string;
+    borderRadius?: number;
   };
   streak?: {
     theme: string;
     hideBorder: boolean;
+    bgColor?: string;
+    borderColor?: string;
+    fireColor?: string;
+    ringColor?: string;
+    strokeColor?: string;
+    textColor?: string;
   };
   languages?: {
     theme: string;
     hideBorder: boolean;
     layout: 'compact' | 'normal';
+    langsCount?: number;
+    hideProgress?: boolean;
+    bgColor?: string;
+    titleColor?: string;
+    textColor?: string;
+    borderColor?: string;
   };
   trophies?: {
     theme: string;
     columnCount: number;
+    noBg?: boolean;
+    noFrame?: boolean;
+    marginW?: number;
+    marginH?: number;
+    selectedTrophies?: string[];
+    rankFilter?: string;
   };
   projects?: {
     selectedRepos: string[];

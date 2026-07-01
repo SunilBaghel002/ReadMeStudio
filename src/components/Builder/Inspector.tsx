@@ -40,6 +40,74 @@ const BANNER_PRESETS = [
   { name: 'Sunset Dark', url: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=1200&auto=format&fit=crop&q=80' },
 ];
 
+const DEFAULT_STATS_CONFIG = {
+  theme: 'github_dark',
+  hideBorder: true,
+  showIcons: true,
+  includeAllCommits: true,
+  hideRank: false,
+  bgColor: '',
+  titleColor: '',
+  textColor: '',
+  iconColor: '',
+  borderColor: '',
+  borderRadius: 10,
+};
+
+const DEFAULT_STREAK_CONFIG = {
+  theme: 'github_dark',
+  hideBorder: true,
+  bgColor: '',
+  borderColor: '',
+  fireColor: '',
+  ringColor: '',
+  strokeColor: '',
+  textColor: '',
+};
+
+const DEFAULT_LANGUAGES_CONFIG = {
+  theme: 'github_dark',
+  hideBorder: true,
+  layout: 'compact' as const,
+  langsCount: 5,
+  hideProgress: false,
+  bgColor: '',
+  titleColor: '',
+  textColor: '',
+  borderColor: '',
+};
+
+const DEFAULT_TROPHIES_CONFIG = {
+  theme: 'github_dark',
+  columnCount: 3,
+  noBg: false,
+  noFrame: false,
+  marginW: 0,
+  marginH: 0,
+  selectedTrophies: [] as string[],
+  rankFilter: '',
+};
+
+const CustomToggle = ({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) => {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className={cn(
+        'w-8 h-4 rounded-full relative transition-colors duration-200 shrink-0 cursor-pointer focus:outline-none',
+        checked ? 'bg-[#7c3aed]' : 'bg-[#30363D]'
+      )}
+    >
+      <span
+        className={cn(
+          'absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform duration-200 shadow-sm block',
+          checked ? 'translate-x-4' : 'translate-x-0'
+        )}
+      />
+    </button>
+  );
+};
+
 export default function Inspector() {
   const [activeTab, setActiveTab] = useState<'global' | 'section'>('section');
   const {
@@ -81,8 +149,16 @@ export default function Inspector() {
   // Helper to update specific config fields
   const handleConfigChange = (type: SectionType, update: any) => {
     if (!selectedSectionId) return;
+
+    let defaults = {};
+    if (type === 'stats') defaults = DEFAULT_STATS_CONFIG;
+    else if (type === 'streak') defaults = DEFAULT_STREAK_CONFIG;
+    else if (type === 'languages') defaults = DEFAULT_LANGUAGES_CONFIG;
+    else if (type === 'trophies') defaults = DEFAULT_TROPHIES_CONFIG;
+
     updateSectionConfig(selectedSectionId, {
       [type]: {
+        ...defaults,
         ...(selectedSection?.config[type as keyof typeof selectedSection.config] || {}),
         ...update,
       },
@@ -349,7 +425,19 @@ export default function Inspector() {
         })()}
 
         {type === 'stats' && (() => {
-          const statsConfig = config.stats || { theme: 'github_dark', hideBorder: false, showIcons: true, includeAllCommits: true };
+          const statsConfig = config.stats || { 
+            theme: 'github_dark', 
+            hideBorder: true, 
+            showIcons: true, 
+            includeAllCommits: true,
+            hideRank: false,
+            bgColor: '',
+            titleColor: '',
+            textColor: '',
+            iconColor: '',
+            borderColor: '',
+            borderRadius: 10
+          };
           return (
             <div className="space-y-4">
               <div>
@@ -366,39 +454,113 @@ export default function Inspector() {
                   ))}
                 </select>
               </div>
-              <div className="flex justify-between items-center py-1">
+              <div className="flex justify-between items-center py-1.5 select-none">
                 <span className="text-[11px] font-semibold text-zinc-400">Hide Card Borders</span>
-                <input
-                  type="checkbox"
-                  checked={statsConfig.hideBorder}
-                  onChange={(e) => handleConfigChange('stats', { hideBorder: e.target.checked })}
-                  className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-indigo-500 focus:ring-indigo-500/20"
+                <CustomToggle
+                  checked={!!statsConfig.hideBorder}
+                  onChange={(checked) => handleConfigChange('stats', { hideBorder: checked })}
                 />
               </div>
-              <div className="flex justify-between items-center py-1">
+              <div className="flex justify-between items-center py-1.5 select-none">
                 <span className="text-[11px] font-semibold text-zinc-400">Show Icon Decorators</span>
-                <input
-                  type="checkbox"
-                  checked={statsConfig.showIcons}
-                  onChange={(e) => handleConfigChange('stats', { showIcons: e.target.checked })}
-                  className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-indigo-500 focus:ring-indigo-500/20"
+                <CustomToggle
+                  checked={!!statsConfig.showIcons}
+                  onChange={(checked) => handleConfigChange('stats', { showIcons: checked })}
                 />
               </div>
-              <div className="flex justify-between items-center py-1">
+              <div className="flex justify-between items-center py-1.5 select-none">
                 <span className="text-[11px] font-semibold text-zinc-400">Include Private Commits</span>
-                <input
-                  type="checkbox"
-                  checked={statsConfig.includeAllCommits}
-                  onChange={(e) => handleConfigChange('stats', { includeAllCommits: e.target.checked })}
-                  className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-indigo-500 focus:ring-indigo-500/20"
+                <CustomToggle
+                  checked={!!statsConfig.includeAllCommits}
+                  onChange={(checked) => handleConfigChange('stats', { includeAllCommits: checked })}
                 />
               </div>
+              <div className="flex justify-between items-center py-1.5 select-none">
+                <span className="text-[11px] font-semibold text-zinc-400">Hide Rank Badge</span>
+                <CustomToggle
+                  checked={!!statsConfig.hideRank}
+                  onChange={(checked) => handleConfigChange('stats', { hideRank: checked })}
+                />
+              </div>
+
+              {/* Detailed Styling */}
+              <details className="group border border-white/5 rounded-xl bg-zinc-950/20 overflow-hidden">
+                <summary className="flex justify-between items-center p-3 text-xs font-bold text-zinc-350 cursor-pointer select-none hover:bg-white/5">
+                  <span>Custom Color Studio</span>
+                  <span className="text-[10px] text-indigo-400 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div className="p-3 border-t border-white/5 space-y-3.5 bg-[#15121b]/40">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">BG Color</label>
+                      <div className="flex gap-1.5 items-center">
+                        <input type="color" value={statsConfig.bgColor || '#0d1117'} onChange={(e) => handleConfigChange('stats', { bgColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
+                        <input type="text" value={statsConfig.bgColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('stats', { bgColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Title Color</label>
+                      <div className="flex gap-1.5 items-center">
+                        <input type="color" value={statsConfig.titleColor || '#818cf8'} onChange={(e) => handleConfigChange('stats', { titleColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
+                        <input type="text" value={statsConfig.titleColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('stats', { titleColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Text Color</label>
+                      <div className="flex gap-1.5 items-center">
+                        <input type="color" value={statsConfig.textColor || '#e4e4e7'} onChange={(e) => handleConfigChange('stats', { textColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
+                        <input type="text" value={statsConfig.textColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('stats', { textColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Icon Color</label>
+                      <div className="flex gap-1.5 items-center">
+                        <input type="color" value={statsConfig.iconColor || '#818cf8'} onChange={(e) => handleConfigChange('stats', { iconColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
+                        <input type="text" value={statsConfig.iconColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('stats', { iconColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Border Color</label>
+                    <div className="flex gap-1.5 items-center">
+                      <input type="color" value={statsConfig.borderColor || '#27272a'} onChange={(e) => handleConfigChange('stats', { borderColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
+                      <input type="text" value={statsConfig.borderColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('stats', { borderColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[10px] text-zinc-400">
+                      <span className="font-semibold">Border Radius</span>
+                      <span className="font-mono text-indigo-400">{statsConfig.borderRadius !== undefined ? statsConfig.borderRadius : 10}px</span>
+                    </div>
+                    <input 
+                      type="range"
+                      min="0"
+                      max="35"
+                      step="1"
+                      value={statsConfig.borderRadius !== undefined ? statsConfig.borderRadius : 10}
+                      onChange={(e) => handleConfigChange('stats', { borderRadius: parseInt(e.target.value) })}
+                      className="w-full h-1 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                    />
+                  </div>
+                </div>
+              </details>
             </div>
           );
         })()}
 
         {type === 'streak' && (() => {
-          const streakConfig = config.streak || { theme: 'github_dark', hideBorder: false };
+          const streakConfig = config.streak || { 
+            theme: 'github_dark', 
+            hideBorder: true,
+            bgColor: '',
+            borderColor: '',
+            fireColor: '',
+            ringColor: '',
+            strokeColor: '',
+            textColor: '',
+          };
           return (
             <div className="space-y-4">
               <div>
@@ -415,21 +577,86 @@ export default function Inspector() {
                   ))}
                 </select>
               </div>
-              <div className="flex justify-between items-center py-1">
+              <div className="flex justify-between items-center py-1.5 select-none">
                 <span className="text-[11px] font-semibold text-zinc-400">Hide Borders</span>
-                <input
-                  type="checkbox"
-                  checked={streakConfig.hideBorder}
-                  onChange={(e) => handleConfigChange('streak', { hideBorder: e.target.checked })}
-                  className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-indigo-500 focus:ring-indigo-500/20"
+                <CustomToggle
+                  checked={!!streakConfig.hideBorder}
+                  onChange={(checked) => handleConfigChange('streak', { hideBorder: checked })}
                 />
               </div>
+
+              {/* Custom Styles */}
+              <details className="group border border-white/5 rounded-xl bg-zinc-950/20 overflow-hidden">
+                <summary className="flex justify-between items-center p-3 text-xs font-bold text-zinc-350 cursor-pointer select-none hover:bg-white/5">
+                  <span>Custom Color Studio</span>
+                  <span className="text-[10px] text-indigo-400 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div className="p-3 border-t border-white/5 space-y-3.5 bg-[#15121b]/40">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">BG Color</label>
+                      <div className="flex gap-1.5 items-center">
+                        <input type="color" value={streakConfig.bgColor || '#0d1117'} onChange={(e) => handleConfigChange('streak', { bgColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
+                        <input type="text" value={streakConfig.bgColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('streak', { bgColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Border Color</label>
+                      <div className="flex gap-1.5 items-center">
+                        <input type="color" value={streakConfig.borderColor || '#27272a'} onChange={(e) => handleConfigChange('streak', { borderColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
+                        <input type="text" value={streakConfig.borderColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('streak', { borderColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Fire (Highlight)</label>
+                      <div className="flex gap-1.5 items-center">
+                        <input type="color" value={streakConfig.fireColor || '#ff9d00'} onChange={(e) => handleConfigChange('streak', { fireColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
+                        <input type="text" value={streakConfig.fireColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('streak', { fireColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Streak Ring</label>
+                      <div className="flex gap-1.5 items-center">
+                        <input type="color" value={streakConfig.ringColor || '#818cf8'} onChange={(e) => handleConfigChange('streak', { ringColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
+                        <input type="text" value={streakConfig.ringColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('streak', { ringColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Stroke (Detail)</label>
+                      <div className="flex gap-1.5 items-center">
+                        <input type="color" value={streakConfig.strokeColor || '#2c2c2c'} onChange={(e) => handleConfigChange('streak', { strokeColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
+                        <input type="text" value={streakConfig.strokeColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('streak', { strokeColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Text Color</label>
+                      <div className="flex gap-1.5 items-center">
+                        <input type="color" value={streakConfig.textColor || '#d4d4d8'} onChange={(e) => handleConfigChange('streak', { textColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
+                        <input type="text" value={streakConfig.textColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('streak', { textColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </details>
             </div>
           );
         })()}
 
         {type === 'languages' && (() => {
-          const langConfig = config.languages || { theme: 'github_dark', hideBorder: false, layout: 'normal' };
+          const langConfig = config.languages || { 
+            theme: 'github_dark', 
+            hideBorder: true, 
+            layout: 'normal',
+            langsCount: 5,
+            hideProgress: false,
+            bgColor: '',
+            titleColor: '',
+            textColor: '',
+            borderColor: '',
+          };
           return (
             <div className="space-y-4">
               <div>
@@ -450,28 +677,117 @@ export default function Inspector() {
                 <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Card Layout</label>
                 <select
                   value={langConfig.layout}
-                  onChange={(e) => handleConfigChange('languages', { layout: e.target.value })}
+                  onChange={(e) => handleConfigChange('languages', { layout: e.target.value as any })}
                   className="w-full px-3 py-2 bg-zinc-900 border border-white/5 rounded-lg text-xs text-zinc-200"
                 >
                   <option value="normal">Normal Breakdown List</option>
                   <option value="compact">Compact Ring Layout</option>
                 </select>
               </div>
-              <div className="flex justify-between items-center py-1">
+              <div className="flex justify-between items-center py-1.5 select-none">
                 <span className="text-[11px] font-semibold text-zinc-400">Hide Borders</span>
-                <input
-                  type="checkbox"
-                  checked={langConfig.hideBorder}
-                  onChange={(e) => handleConfigChange('languages', { hideBorder: e.target.checked })}
-                  className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-indigo-500 focus:ring-indigo-500/20"
+                <CustomToggle
+                  checked={!!langConfig.hideBorder}
+                  onChange={(checked) => handleConfigChange('languages', { hideBorder: checked })}
                 />
               </div>
+              <div className="flex justify-between items-center py-1.5 select-none">
+                <span className="text-[11px] font-semibold text-zinc-400">Hide Progress Bar</span>
+                <CustomToggle
+                  checked={!!langConfig.hideProgress}
+                  onChange={(checked) => handleConfigChange('languages', { hideProgress: checked })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Max Languages Displayed ({langConfig.langsCount !== undefined ? langConfig.langsCount : 5})</label>
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  step="1"
+                  value={langConfig.langsCount !== undefined ? langConfig.langsCount : 5}
+                  onChange={(e) => handleConfigChange('languages', { langsCount: parseInt(e.target.value) })}
+                  className="w-full accent-indigo-500 cursor-pointer"
+                />
+              </div>
+
+              {/* Custom Styles */}
+              <details className="group border border-white/5 rounded-xl bg-zinc-950/20 overflow-hidden">
+                <summary className="flex justify-between items-center p-3 text-xs font-bold text-zinc-350 cursor-pointer select-none hover:bg-white/5">
+                  <span>Custom Color Studio</span>
+                  <span className="text-[10px] text-indigo-400 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div className="p-3 border-t border-white/5 space-y-3.5 bg-[#15121b]/40">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">BG Color</label>
+                      <div className="flex gap-1.5 items-center">
+                        <input type="color" value={langConfig.bgColor || '#0d1117'} onChange={(e) => handleConfigChange('languages', { bgColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
+                        <input type="text" value={langConfig.bgColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('languages', { bgColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Title Color</label>
+                      <div className="flex gap-1.5 items-center">
+                        <input type="color" value={langConfig.titleColor || '#818cf8'} onChange={(e) => handleConfigChange('languages', { titleColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
+                        <input type="text" value={langConfig.titleColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('languages', { titleColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Text Color</label>
+                      <div className="flex gap-1.5 items-center">
+                        <input type="color" value={langConfig.textColor || '#e4e4e7'} onChange={(e) => handleConfigChange('languages', { textColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
+                        <input type="text" value={langConfig.textColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('languages', { textColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Border Color</label>
+                      <div className="flex gap-1.5 items-center">
+                        <input type="color" value={langConfig.borderColor || '#27272a'} onChange={(e) => handleConfigChange('languages', { borderColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
+                        <input type="text" value={langConfig.borderColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('languages', { borderColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </details>
             </div>
           );
         })()}
 
         {type === 'trophies' && (() => {
-          const trophyConfig = config.trophies || { theme: 'github_dark', columnCount: 3 };
+          const trophyConfig = config.trophies || { 
+            theme: 'github_dark', 
+            columnCount: 3,
+            noBg: false,
+            noFrame: false,
+            marginW: 0,
+            marginH: 0,
+            selectedTrophies: [] as string[],
+            rankFilter: ''
+          };
+
+          const TROPHY_OPTIONS = [
+            { id: 'Stars', label: 'Stars' },
+            { id: 'Followers', label: 'Followers' },
+            { id: 'Commits', label: 'Commits' },
+            { id: 'Repos', label: 'Repositories' }
+          ];
+
+          const toggleTrophySelection = (id: string) => {
+            const list = [...(trophyConfig.selectedTrophies || [])];
+            let newList;
+            if (list.includes(id)) {
+              newList = list.filter(x => x !== id);
+            } else {
+              newList = [...list, id];
+            }
+            handleConfigChange('trophies', { selectedTrophies: newList });
+          };
+
           return (
             <div className="space-y-4">
               <div>
@@ -500,6 +816,92 @@ export default function Inspector() {
                   className="w-full accent-indigo-500 cursor-pointer"
                 />
               </div>
+
+              <div className="flex justify-between items-center py-1.5 select-none">
+                <span className="text-[11px] font-semibold text-zinc-400">Transparent Background</span>
+                <CustomToggle
+                  checked={!!trophyConfig.noBg}
+                  onChange={(checked) => handleConfigChange('trophies', { noBg: checked })}
+                />
+              </div>
+
+              <div className="flex justify-between items-center py-1.5 select-none">
+                <span className="text-[11px] font-semibold text-zinc-400">Hide Trophy Frame Borders</span>
+                <CustomToggle
+                  checked={!!trophyConfig.noFrame}
+                  onChange={(checked) => handleConfigChange('trophies', { noFrame: checked })}
+                />
+              </div>
+
+              {/* Trophies Filter List */}
+              <div className="space-y-2">
+                <label className="block text-[11px] font-semibold text-zinc-400">Visible Trophies (Empty = All)</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {TROPHY_OPTIONS.map((tr) => {
+                    const isChecked = (trophyConfig.selectedTrophies || []).includes(tr.id);
+                    return (
+                      <button
+                        key={tr.id}
+                        type="button"
+                        onClick={() => toggleTrophySelection(tr.id)}
+                        className={cn(
+                          'text-[9px] px-2.5 py-1 rounded-md border font-semibold transition-all duration-150 cursor-pointer',
+                          isChecked
+                            ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400'
+                            : 'bg-zinc-850 border-white/5 text-zinc-450 hover:border-white/10 hover:text-zinc-300'
+                        )}
+                      >
+                        {tr.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Detailed Settings */}
+              <details className="group border border-white/5 rounded-xl bg-zinc-950/20 overflow-hidden">
+                <summary className="flex justify-between items-center p-3 text-xs font-bold text-zinc-350 cursor-pointer select-none hover:bg-white/5">
+                  <span>Advanced Layout & Ranks</span>
+                  <span className="text-[10px] text-indigo-400 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div className="p-3 border-t border-white/5 space-y-3.5 bg-[#15121b]/40">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Margin Width</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="50"
+                        value={trophyConfig.marginW !== undefined ? trophyConfig.marginW : 0}
+                        onChange={(e) => handleConfigChange('trophies', { marginW: parseInt(e.target.value) || 0 })}
+                        className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[10px] font-mono text-zinc-200 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Margin Height</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="50"
+                        value={trophyConfig.marginH !== undefined ? trophyConfig.marginH : 0}
+                        onChange={(e) => handleConfigChange('trophies', { marginH: parseInt(e.target.value) || 0 })}
+                        className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[10px] font-mono text-zinc-200 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Rank Filter (e.g. SECRET,SSS,S,A)</label>
+                    <input
+                      type="text"
+                      value={trophyConfig.rankFilter || ''}
+                      placeholder="e.g. SECRET,SSS,S,A"
+                      onChange={(e) => handleConfigChange('trophies', { rankFilter: e.target.value })}
+                      className="w-full px-2.5 py-1.5 bg-zinc-900 border border-white/5 rounded-md text-[10px] font-mono text-zinc-200 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </details>
             </div>
           );
         })()}

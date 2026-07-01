@@ -90,6 +90,7 @@ export function generateMarkdown(
     accentColor: string;
     statsCardTheme: string;
     readmeStyle: ReadmeStyle;
+    baseUrl?: string;
   }
 ): string {
   if (!username) return '<!-- Enter your GitHub username to generate a preview -->';
@@ -97,6 +98,7 @@ export function generateMarkdown(
   let markdownLines: string[] = [];
   const cleanColor = options.accentColor.replace('#', '');
   const style = options.readmeStyle;
+  const hostUrl = options.baseUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://readme-studio.vercel.app');
 
   // 1. Optional Banner Section
   if (options.showBanners && options.bannerImage) {
@@ -246,17 +248,22 @@ export function generateMarkdown(
         if (config) {
           const theme = config.theme || options.statsCardTheme;
           const hideBorder = config.hideBorder ? 'true' : 'false';
-          const showIcons = config.showIcons ? 'true' : 'false';
+          const showIcons = config.showIcons !== false ? 'true' : 'false';
+          const showLabels = config.showLabels !== false ? 'true' : 'false';
           const countCommits = config.includeAllCommits ? 'true' : 'false';
+          const includeForks = config.includeForks ? 'true' : 'false';
+          const variant = config.variant || 'classic';
+          const showIconDecorators = config.showIconDecorators ? 'true' : 'false';
+          const compactMode = config.compactMode ? 'true' : 'false';
           
-          let url = `https://github-readme-stats.shion.dev/api?username=${username}&theme=${theme}&show_icons=${showIcons}&count_private=${countCommits}&hide_border=${hideBorder}`;
+          let url = `${hostUrl}/api/github/stats?username=${username}&variant=${variant}&theme=${theme}&show_icons=${showIcons}&show_labels=${showLabels}&hide_border=${hideBorder}&compact_mode=${compactMode}&include_all_commits=${countCommits}&include_forks=${includeForks}&show_icon_decorators=${showIconDecorators}`;
           if (config.hideRank) url += `&hide_rank=true`;
           if (config.bgColor) url += `&bg_color=${config.bgColor.replace('#', '')}`;
           if (config.titleColor) url += `&title_color=${config.titleColor.replace('#', '')}`;
           if (config.textColor) url += `&text_color=${config.textColor.replace('#', '')}`;
           if (config.iconColor) url += `&icon_color=${config.iconColor.replace('#', '')}`;
           if (config.borderColor) url += `&border_color=${config.borderColor.replace('#', '')}`;
-          if (config.borderRadius !== undefined && config.borderRadius !== 10) url += `&border_radius=${config.borderRadius}`;
+          if (config.borderRadius !== undefined) url += `&border_radius=${config.borderRadius}`;
 
           markdownLines.push(`### GitHub Stats\n`);
           markdownLines.push(
@@ -271,17 +278,20 @@ export function generateMarkdown(
         if (config) {
           const theme = config.theme || options.statsCardTheme;
           const hideBorder = config.hideBorder ? 'true' : 'false';
+          const variant = config.variant || 'classic';
+          const showFireIcon = config.showFireIcon !== false ? 'true' : 'false';
+          const showDateRanges = config.showDateRanges !== false ? 'true' : 'false';
+          const showLabels = config.showLabels !== false ? 'true' : 'false';
+          const compactMode = config.compactMode ? 'true' : 'false';
+          const flameStyle = config.flameStyle || 'fire';
 
-          let url = `https://streak-stats.demolab.com?user=${username}&theme=${theme}&hide_border=${hideBorder}`;
-          if (config.bgColor) url += `&background=${config.bgColor.replace('#', '')}`;
-          if (config.borderColor) url += `&border=${config.borderColor.replace('#', '')}`;
-          if (config.fireColor) url += `&fire=${config.fireColor.replace('#', '')}`;
-          if (config.ringColor) url += `&ring=${config.ringColor.replace('#', '')}`;
-          if (config.strokeColor) url += `&stroke=${config.strokeColor.replace('#', '')}`;
-          if (config.textColor) {
-            const cleanCol = config.textColor.replace('#', '');
-            url += `&currStreakNum=${cleanCol}&currStreakLabel=${cleanCol}&sideNums=${cleanCol}&sideLabels=${cleanCol}&dates=${cleanCol}`;
-          }
+          let url = `${hostUrl}/api/github/streak?username=${username}&variant=${variant}&theme=${theme}&hide_border=${hideBorder}&show_fire_icon=${showFireIcon}&show_date_ranges=${showDateRanges}&show_labels=${showLabels}&compact_mode=${compactMode}&flame_style=${flameStyle}`;
+          if (config.bgColor) url += `&bg_color=${config.bgColor.replace('#', '')}`;
+          if (config.borderColor) url += `&border_color=${config.borderColor.replace('#', '')}`;
+          if (config.fireColor) url += `&fire_color=${config.fireColor.replace('#', '')}`;
+          if (config.ringColor) url += `&ring_color=${config.ringColor.replace('#', '')}`;
+          if (config.strokeColor) url += `&stroke_color=${config.strokeColor.replace('#', '')}`;
+          if (config.textColor) url += `&text_color=${config.textColor.replace('#', '')}`;
 
           markdownLines.push(`### Contribution Streak\n`);
           markdownLines.push(
@@ -296,11 +306,17 @@ export function generateMarkdown(
         if (config) {
           const theme = config.theme || options.statsCardTheme;
           const hideBorder = config.hideBorder ? 'true' : 'false';
-          const layout = config.layout || 'normal';
+          const variant = config.variant || 'classic';
+          const showPercentages = config.showPercentages !== false ? 'true' : 'false';
+          const showIcons = config.showIcons !== false ? 'true' : 'false';
+          const compactMode = config.compactMode ? 'true' : 'false';
+          const hideProgress = config.hideProgress ? 'true' : 'false';
+          const includeForks = config.includeForks ? 'true' : 'false';
 
-          let url = `https://github-readme-stats.shion.dev/api/top-langs/?username=${username}&theme=${theme}&layout=${layout}&hide_border=${hideBorder}`;
-          if (config.langsCount !== undefined) url += `&langs_count=${config.langsCount}`;
-          if (config.hideProgress) url += `&hide_progress=true`;
+          let url = `${hostUrl}/api/github/languages?username=${username}&variant=${variant}&theme=${theme}&hide_border=${hideBorder}&langs_count=${config.langsCount || 5}&hide_progress=${hideProgress}&show_percentages=${showPercentages}&show_icons=${showIcons}&compact_mode=${compactMode}&include_forks=${includeForks}`;
+          if (config.excludeLanguages && config.excludeLanguages.length > 0) {
+            url += `&exclude_languages=${config.excludeLanguages.join(',')}`;
+          }
           if (config.bgColor) url += `&bg_color=${config.bgColor.replace('#', '')}`;
           if (config.titleColor) url += `&title_color=${config.titleColor.replace('#', '')}`;
           if (config.textColor) url += `&text_color=${config.textColor.replace('#', '')}`;
@@ -319,29 +335,30 @@ export function generateMarkdown(
         if (config) {
           const theme = config.theme || options.statsCardTheme;
           const columns = config.columnCount || 3;
+          const variant = config.variant || 'classic';
+          const noBg = config.noBg ? 'true' : 'false';
+          const noFrame = config.noFrame ? 'true' : 'false';
+          const showProgress = config.showProgress !== false ? 'true' : 'false';
+          const showNextRank = config.showNextRank !== false ? 'true' : 'false';
+          const showCategoryLabels = config.showCategoryLabels !== false ? 'true' : 'false';
+          const compactMode = config.compactMode ? 'true' : 'false';
+          const includeUnranked = config.includeUnranked !== false ? 'true' : 'false';
 
-          let url = `https://github-profile-trophy.vercel.app/?username=${username}&theme=${theme}&column=${columns}`;
+          let url = `${hostUrl}/api/github/trophies?username=${username}&variant=${variant}&theme=${theme}&column_count=${columns}&no_bg=${noBg}&no_frame=${noFrame}&show_progress=${showProgress}&show_next_rank=${showNextRank}&show_category_labels=${showCategoryLabels}&compact_mode=${compactMode}&include_unranked=${includeUnranked}`;
           
-          if (config.noFrame) {
-            url += `&no-frame=true`;
-          } else {
-            url += `&no-frame=${theme === 'neutral' ? 'false' : 'true'}`;
-          }
-          if (config.noBg) url += `&no-bg=true`;
-          
-          if (config.marginW) url += `&margin-w=${config.marginW}`;
-          if (config.marginH) url += `&margin-h=${config.marginH}`;
+          if (config.marginW) url += `&margin_w=${config.marginW}`;
+          if (config.marginH) url += `&margin_h=${config.marginH}`;
           
           if (config.selectedTrophies && config.selectedTrophies.length > 0) {
-            url += `&title=${config.selectedTrophies.join(',')}`;
+            url += `&selected_trophies=${config.selectedTrophies.join(',')}`;
           }
           if (config.rankFilter) {
-            url += `&rank=${config.rankFilter}`;
+            url += `&rank_filter=${config.rankFilter}`;
           }
 
           markdownLines.push(`### Trophies\n`);
           markdownLines.push(
-            `<p align="center">\n  <a href="https://github.com/ryo-ma/github-profile-trophy">\n    <img src="${url}" alt="GitHub Trophies" />\n  </a>\n</p>\n`
+            `<p align="center">\n  <img src="${url}" alt="GitHub Trophies" />\n</p>\n`
           );
         }
         break;

@@ -30,6 +30,7 @@ import {
   StatsCardPreview,
   LanguagesCardPreview,
   TrophiesCardPreview,
+  StreakCardPreview,
   RepositoryPinPreview
 } from './CustomPreviewCards';
 
@@ -46,6 +47,7 @@ export default function PreviewPanel() {
     topRepos,
     languages,
     stats,
+    streak,
     showEmojis,
     showBanners,
     bannerImage,
@@ -283,21 +285,26 @@ export default function PreviewPanel() {
                         const isStatsDomain = src.includes('github-readme-stats.vercel.app') || src.includes('github-readme-stats.shion.dev');
                         
                         // 1. Check if it's the GitHub Stats Card
-                        if (isStatsDomain && src.includes('/api') && !src.includes('top-langs') && !src.includes('/pin/')) {
+                        if (src.includes('/api/github/stats') || (isStatsDomain && src.includes('/api') && !src.includes('top-langs') && !src.includes('/pin/'))) {
                           return <StatsCardPreview stats={stats} username={username} />;
                         }
 
                         // 2. Check if it's the Top Languages Card
-                        if (isStatsDomain && src.includes('/api/top-langs')) {
+                        if (src.includes('/api/github/languages') || (isStatsDomain && src.includes('/api/top-langs'))) {
                           return <LanguagesCardPreview languages={languages} />;
                         }
 
-                        // 3. Check if it's the Trophies Card
-                        if (src.includes('github-profile-trophy.vercel.app')) {
+                        // 3. Check if it's the Streak Card
+                        if (src.includes('/api/github/streak') || src.includes('streak-stats.demolab.com')) {
+                          return <StreakCardPreview streak={streak} />;
+                        }
+
+                        // 4. Check if it's the Trophies Card
+                        if (src.includes('/api/github/trophies') || src.includes('github-profile-trophy.vercel.app')) {
                           return <TrophiesCardPreview stats={stats} profile={profile} />;
                         }
 
-                        // 4. Check if it's a Repository Pin Card
+                        // 5. Check if it's a Repository Pin Card
                         if (isStatsDomain && src.includes('/api/pin/')) {
                           const repoName = new URLSearchParams(src.split('?')[1] || '').get('repo') || '';
                           return <RepositoryPinPreview repoName={repoName} topRepos={topRepos} />;

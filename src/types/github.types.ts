@@ -100,10 +100,15 @@ export interface SectionConfig {
   };
   stats?: {
     theme: string;
+    variant?: 'classic' | 'grid' | 'horizontal' | 'dashboard' | 'terminal';
     hideBorder: boolean;
     showIcons: boolean;
+    showLabels?: boolean;
     includeAllCommits: boolean;
+    includeForks?: boolean;
     hideRank?: boolean;
+    showIconDecorators?: boolean;
+    compactMode?: boolean;
     bgColor?: string;
     titleColor?: string;
     textColor?: string;
@@ -113,7 +118,15 @@ export interface SectionConfig {
   };
   streak?: {
     theme: string;
+    variant?: 'classic' | 'vertical' | 'compact' | 'graph' | 'neon';
     hideBorder: boolean;
+    showFireIcon?: boolean;
+    showDateRanges?: boolean;
+    showLabels?: boolean;
+    compactMode?: boolean;
+    flameStyle?: 'fire' | 'lightning' | 'star' | string;
+    alignment?: 'left' | 'center' | 'right';
+    circleStyle?: 'filled' | 'outlined' | 'gradient';
     bgColor?: string;
     borderColor?: string;
     fireColor?: string;
@@ -123,10 +136,16 @@ export interface SectionConfig {
   };
   languages?: {
     theme: string;
+    variant?: 'classic' | 'donut' | 'grid' | 'list' | 'waffle' | 'cloud';
     hideBorder: boolean;
-    layout: 'compact' | 'normal';
     langsCount?: number;
     hideProgress?: boolean;
+    showPercentages?: boolean;
+    showIcons?: boolean;
+    includeForks?: boolean;
+    excludeLanguages?: string[];
+    compactMode?: boolean;
+    colorSource?: 'github' | 'custom';
     bgColor?: string;
     titleColor?: string;
     textColor?: string;
@@ -134,6 +153,7 @@ export interface SectionConfig {
   };
   trophies?: {
     theme: string;
+    variant?: 'classic' | 'badges' | 'ribbon' | 'minimal' | 'podium';
     columnCount: number;
     noBg?: boolean;
     noFrame?: boolean;
@@ -141,6 +161,14 @@ export interface SectionConfig {
     marginH?: number;
     selectedTrophies?: string[];
     rankFilter?: string;
+    limitTrophiesCount?: number;
+    showProgress?: boolean;
+    showNextRank?: boolean;
+    trophyStyle?: '3d' | 'flat' | 'minimal';
+    showCategoryLabels?: boolean;
+    compactMode?: boolean;
+    animateHover?: boolean;
+    includeUnranked?: boolean;
   };
   projects?: {
     selectedRepos: string[];

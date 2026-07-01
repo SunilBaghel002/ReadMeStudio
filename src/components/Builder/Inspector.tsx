@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useBuilderStore } from '@/store/useBuilderStore';
+import { THEME_PALETTES } from '@/lib/theme';
 import { SKILL_BADGES } from '@/lib/markdown';
 import { AppTheme, FontStyle, SectionType, ReadmeStyle } from '@/types/github.types';
 import { DebouncedInput, DebouncedTextarea } from '@/components/UI/DebouncedInput';
@@ -134,6 +135,7 @@ export default function Inspector() {
     setBannerImage,
     loadTemplate,
     topRepos,
+    languages,
     canvasBgColor,
     setCanvasBgColor,
     cardBgColor,
@@ -427,10 +429,14 @@ export default function Inspector() {
         {type === 'stats' && (() => {
           const statsConfig = config.stats || { 
             theme: 'github_dark', 
+            variant: 'classic',
             hideBorder: true, 
             showIcons: true, 
+            showLabels: true,
             includeAllCommits: true,
             hideRank: false,
+            showIconDecorators: false,
+            compactMode: false,
             bgColor: '',
             titleColor: '',
             textColor: '',
@@ -438,114 +444,197 @@ export default function Inspector() {
             borderColor: '',
             borderRadius: 10
           };
+
+          const statsVariants = [
+            { id: 'classic', label: 'Classic Card', desc: 'Stat list + rank circle' },
+            { id: 'grid', label: 'Compact Grid', desc: 'Mini grid layout' },
+            { id: 'horizontal', label: 'Horizontal Bar', desc: 'Minimal clean row' },
+            { id: 'dashboard', label: 'Dashboard', desc: 'Larger split dashboard' },
+            { id: 'terminal', label: 'Terminal Style', desc: 'Monospace code output' },
+          ];
+
           return (
             <div className="space-y-4">
-              <div>
-                <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Visual Theme</label>
-                <select
-                  value={statsConfig.theme}
-                  onChange={(e) => handleConfigChange('stats', { theme: e.target.value })}
-                  className="w-full px-3 py-2 bg-zinc-900 border border-white/5 rounded-lg text-xs text-zinc-200 font-mono"
-                >
-                  {STATS_CARD_THEMES.map((theme) => (
-                    <option key={theme.value} value={theme.value}>
-                      {theme.name}
-                    </option>
+              {/* Section 1 — DESIGN VARIANT */}
+              <div className="border-b border-white/5 pb-4">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 1 — Design Variant</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {statsVariants.map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => handleConfigChange('stats', { variant: v.id })}
+                      className={cn(
+                        "p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer h-[76px]",
+                        (statsConfig.variant || 'classic') === v.id
+                          ? "bg-indigo-500/10 border-indigo-500 text-white shadow-lg shadow-indigo-500/5"
+                          : "bg-zinc-900 border-white/5 text-zinc-450 hover:border-white/10 hover:bg-zinc-850"
+                      )}
+                    >
+                      <span className="text-[10px] font-bold block">{v.label}</span>
+                      <span className="text-[8px] text-zinc-500 block leading-tight mt-1">{v.desc}</span>
+                    </button>
                   ))}
-                </select>
-              </div>
-              <div className="flex justify-between items-center py-1.5 select-none">
-                <span className="text-[11px] font-semibold text-zinc-400">Hide Card Borders</span>
-                <CustomToggle
-                  checked={!!statsConfig.hideBorder}
-                  onChange={(checked) => handleConfigChange('stats', { hideBorder: checked })}
-                />
-              </div>
-              <div className="flex justify-between items-center py-1.5 select-none">
-                <span className="text-[11px] font-semibold text-zinc-400">Show Icon Decorators</span>
-                <CustomToggle
-                  checked={!!statsConfig.showIcons}
-                  onChange={(checked) => handleConfigChange('stats', { showIcons: checked })}
-                />
-              </div>
-              <div className="flex justify-between items-center py-1.5 select-none">
-                <span className="text-[11px] font-semibold text-zinc-400">Include Private Commits</span>
-                <CustomToggle
-                  checked={!!statsConfig.includeAllCommits}
-                  onChange={(checked) => handleConfigChange('stats', { includeAllCommits: checked })}
-                />
-              </div>
-              <div className="flex justify-between items-center py-1.5 select-none">
-                <span className="text-[11px] font-semibold text-zinc-400">Hide Rank Badge</span>
-                <CustomToggle
-                  checked={!!statsConfig.hideRank}
-                  onChange={(checked) => handleConfigChange('stats', { hideRank: checked })}
-                />
+                </div>
               </div>
 
-              {/* Detailed Styling */}
-              <details className="group border border-white/5 rounded-xl bg-zinc-950/20 overflow-hidden">
-                <summary className="flex justify-between items-center p-3 text-xs font-bold text-zinc-350 cursor-pointer select-none hover:bg-white/5">
-                  <span>Custom Color Studio</span>
-                  <span className="text-[10px] text-indigo-400 group-open:rotate-180 transition-transform">▼</span>
-                </summary>
-                <div className="p-3 border-t border-white/5 space-y-3.5 bg-[#15121b]/40">
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div>
-                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">BG Color</label>
-                      <div className="flex gap-1.5 items-center">
-                        <input type="color" value={statsConfig.bgColor || '#0d1117'} onChange={(e) => handleConfigChange('stats', { bgColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
-                        <input type="text" value={statsConfig.bgColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('stats', { bgColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Title Color</label>
-                      <div className="flex gap-1.5 items-center">
-                        <input type="color" value={statsConfig.titleColor || '#818cf8'} onChange={(e) => handleConfigChange('stats', { titleColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
-                        <input type="text" value={statsConfig.titleColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('stats', { titleColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Text Color</label>
-                      <div className="flex gap-1.5 items-center">
-                        <input type="color" value={statsConfig.textColor || '#e4e4e7'} onChange={(e) => handleConfigChange('stats', { textColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
-                        <input type="text" value={statsConfig.textColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('stats', { textColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Icon Color</label>
-                      <div className="flex gap-1.5 items-center">
-                        <input type="color" value={statsConfig.iconColor || '#818cf8'} onChange={(e) => handleConfigChange('stats', { iconColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
-                        <input type="text" value={statsConfig.iconColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('stats', { iconColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Border Color</label>
-                    <div className="flex gap-1.5 items-center">
-                      <input type="color" value={statsConfig.borderColor || '#27272a'} onChange={(e) => handleConfigChange('stats', { borderColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
-                      <input type="text" value={statsConfig.borderColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('stats', { borderColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] text-zinc-400">
-                      <span className="font-semibold">Border Radius</span>
-                      <span className="font-mono text-indigo-400">{statsConfig.borderRadius !== undefined ? statsConfig.borderRadius : 10}px</span>
-                    </div>
-                    <input 
-                      type="range"
-                      min="0"
-                      max="35"
-                      step="1"
-                      value={statsConfig.borderRadius !== undefined ? statsConfig.borderRadius : 10}
-                      onChange={(e) => handleConfigChange('stats', { borderRadius: parseInt(e.target.value) })}
-                      className="w-full h-1 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                    />
+              {/* Section 2 — THEME */}
+              <div className="border-b border-white/5 pb-4">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 2 — Theme</label>
+                <div className="flex gap-2 items-center">
+                  <select
+                    value={statsConfig.theme}
+                    onChange={(e) => handleConfigChange('stats', { theme: e.target.value })}
+                    className="flex-1 px-3 py-2 bg-zinc-900 border border-white/5 rounded-lg text-xs text-zinc-200 font-mono"
+                  >
+                    {STATS_CARD_THEMES.map((theme) => (
+                      <option key={theme.value} value={theme.value}>
+                        {theme.name}
+                      </option>
+                    ))}
+                    <option value="custom">Custom Theme</option>
+                  </select>
+                  <div className="flex gap-1 bg-zinc-900 border border-white/5 rounded-lg p-1.5 shrink-0">
+                    {(() => {
+                      const pal = THEME_PALETTES[statsConfig.theme] || THEME_PALETTES.github_dark;
+                      return (
+                        <>
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pal.bg }} title="Background" />
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pal.title }} title="Title" />
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pal.text }} title="Text" />
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pal.accent }} title="Accent" />
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
-              </details>
+              </div>
+
+              {/* Section 3 — LAYOUT OPTIONS */}
+              <div className="border-b border-white/5 pb-4 space-y-3">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider">Section 3 — Layout Options</label>
+                
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400 font-semibold">Compact Mode</span>
+                  <CustomToggle
+                    checked={!!statsConfig.compactMode}
+                    onChange={(checked) => handleConfigChange('stats', { compactMode: checked })}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] text-zinc-400">
+                    <span className="font-semibold">Border Radius</span>
+                    <span className="font-mono text-indigo-400">{statsConfig.borderRadius !== undefined ? statsConfig.borderRadius : 10}px</span>
+                  </div>
+                  <input 
+                    type="range"
+                    min="0"
+                    max="30"
+                    step="1"
+                    value={statsConfig.borderRadius !== undefined ? statsConfig.borderRadius : 10}
+                    onChange={(e) => handleConfigChange('stats', { borderRadius: parseInt(e.target.value) })}
+                    className="w-full h-1 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Section 4 — DISPLAY OPTIONS */}
+              <div className="border-b border-white/5 pb-4 space-y-2">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 4 — Display Options</label>
+                
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Hide Card Borders</span>
+                  <CustomToggle
+                    checked={!!statsConfig.hideBorder}
+                    onChange={(checked) => handleConfigChange('stats', { hideBorder: checked })}
+                  />
+                </div>
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Show Icons</span>
+                  <CustomToggle
+                    checked={statsConfig.showIcons !== false}
+                    onChange={(checked) => handleConfigChange('stats', { showIcons: checked })}
+                  />
+                </div>
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Show Labels</span>
+                  <CustomToggle
+                    checked={statsConfig.showLabels !== false}
+                    onChange={(checked) => handleConfigChange('stats', { showLabels: checked })}
+                  />
+                </div>
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Show Icon Decorators</span>
+                  <CustomToggle
+                    checked={!!statsConfig.showIconDecorators}
+                    onChange={(checked) => handleConfigChange('stats', { showIconDecorators: checked })}
+                  />
+                </div>
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Hide Rank Badge</span>
+                  <CustomToggle
+                    checked={!!statsConfig.hideRank}
+                    onChange={(checked) => handleConfigChange('stats', { hideRank: checked })}
+                  />
+                </div>
+              </div>
+
+              {/* Section 5 — DATA OPTIONS */}
+              <div className="border-b border-white/5 pb-4 space-y-2">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 5 — Data Options</label>
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Include Private Commits</span>
+                  <CustomToggle
+                    checked={!!statsConfig.includeAllCommits}
+                    onChange={(checked) => handleConfigChange('stats', { includeAllCommits: checked })}
+                  />
+                </div>
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Include Repository Forks</span>
+                  <CustomToggle
+                    checked={!!statsConfig.includeForks}
+                    onChange={(checked) => handleConfigChange('stats', { includeForks: checked })}
+                  />
+                </div>
+              </div>
+
+              {/* Section 6 — COLORS (Custom Mode Only) */}
+              {statsConfig.theme === 'custom' && (
+                <div className="border-b border-white/5 pb-4 space-y-3">
+                  <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider">Section 6 — Custom Colors</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-450 mb-1">BG Color</label>
+                      <input type="color" value={statsConfig.bgColor || '#0d1117'} onChange={(e) => handleConfigChange('stats', { bgColor: e.target.value })} className="w-full h-8 bg-zinc-900 border border-white/5 rounded cursor-pointer" />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-450 mb-1">Title Color</label>
+                      <input type="color" value={statsConfig.titleColor || '#818cf8'} onChange={(e) => handleConfigChange('stats', { titleColor: e.target.value })} className="w-full h-8 bg-zinc-900 border border-white/5 rounded cursor-pointer" />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-450 mb-1">Text Color</label>
+                      <input type="color" value={statsConfig.textColor || '#e4e4e7'} onChange={(e) => handleConfigChange('stats', { textColor: e.target.value })} className="w-full h-8 bg-zinc-900 border border-white/5 rounded cursor-pointer" />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-450 mb-1">Icon Color</label>
+                      <input type="color" value={statsConfig.iconColor || '#818cf8'} onChange={(e) => handleConfigChange('stats', { iconColor: e.target.value })} className="w-full h-8 bg-zinc-900 border border-white/5 rounded cursor-pointer" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-semibold text-zinc-450 mb-1">Border Color</label>
+                    <input type="color" value={statsConfig.borderColor || '#27272a'} onChange={(e) => handleConfigChange('stats', { borderColor: e.target.value })} className="w-full h-8 bg-zinc-900 border border-white/5 rounded cursor-pointer" />
+                  </div>
+                </div>
+              )}
+
+              {/* Section 7 — ADVANCED */}
+              <div>
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 7 — Advanced</label>
+                <div className="p-3 bg-zinc-900/60 border border-white/5 rounded-xl text-center">
+                  <span className="text-[10px] text-zinc-500 font-mono">No advanced settings available</span>
+                </div>
+              </div>
             </div>
           );
         })()}
@@ -553,7 +642,15 @@ export default function Inspector() {
         {type === 'streak' && (() => {
           const streakConfig = config.streak || { 
             theme: 'github_dark', 
+            variant: 'classic',
             hideBorder: true,
+            showFireIcon: true,
+            showDateRanges: true,
+            showLabels: true,
+            compactMode: false,
+            flameStyle: 'fire',
+            alignment: 'center',
+            circleStyle: 'filled',
             bgColor: '',
             borderColor: '',
             fireColor: '',
@@ -561,86 +658,172 @@ export default function Inspector() {
             strokeColor: '',
             textColor: '',
           };
+
+          const streakVariants = [
+            { id: 'classic', label: 'Classic Column', desc: 'Three column stats' },
+            { id: 'vertical', label: 'Vertical Stack', desc: 'Stacked status list' },
+            { id: 'compact', label: 'Compact Badge', desc: 'Header banner stats' },
+            { id: 'graph', label: 'Fire Graph', desc: 'Contribution bar graph' },
+            { id: 'neon', label: 'Neon Cyberpunk', desc: 'Monospace glow cyberpunk' },
+          ];
+
           return (
             <div className="space-y-4">
-              <div>
-                <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Visual Theme</label>
-                <select
-                  value={streakConfig.theme}
-                  onChange={(e) => handleConfigChange('streak', { theme: e.target.value })}
-                  className="w-full px-3 py-2 bg-zinc-900 border border-white/5 rounded-lg text-xs text-zinc-200 font-mono"
-                >
-                  {STATS_CARD_THEMES.map((theme) => (
-                    <option key={theme.value} value={theme.value}>
-                      {theme.name}
-                    </option>
+              {/* Section 1 — DESIGN VARIANT */}
+              <div className="border-b border-white/5 pb-4">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 1 — Design Variant</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {streakVariants.map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => handleConfigChange('streak', { variant: v.id })}
+                      className={cn(
+                        "p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer h-[76px]",
+                        (streakConfig.variant || 'classic') === v.id
+                          ? "bg-indigo-500/10 border-indigo-500 text-white shadow-lg shadow-indigo-500/5"
+                          : "bg-zinc-900 border-white/5 text-zinc-450 hover:border-white/10 hover:bg-zinc-850"
+                      )}
+                    >
+                      <span className="text-[10px] font-bold block">{v.label}</span>
+                      <span className="text-[8px] text-zinc-500 block leading-tight mt-1">{v.desc}</span>
+                    </button>
                   ))}
-                </select>
-              </div>
-              <div className="flex justify-between items-center py-1.5 select-none">
-                <span className="text-[11px] font-semibold text-zinc-400">Hide Borders</span>
-                <CustomToggle
-                  checked={!!streakConfig.hideBorder}
-                  onChange={(checked) => handleConfigChange('streak', { hideBorder: checked })}
-                />
+                </div>
               </div>
 
-              {/* Custom Styles */}
-              <details className="group border border-white/5 rounded-xl bg-zinc-950/20 overflow-hidden">
-                <summary className="flex justify-between items-center p-3 text-xs font-bold text-zinc-350 cursor-pointer select-none hover:bg-white/5">
-                  <span>Custom Color Studio</span>
-                  <span className="text-[10px] text-indigo-400 group-open:rotate-180 transition-transform">▼</span>
-                </summary>
-                <div className="p-3 border-t border-white/5 space-y-3.5 bg-[#15121b]/40">
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div>
-                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">BG Color</label>
-                      <div className="flex gap-1.5 items-center">
-                        <input type="color" value={streakConfig.bgColor || '#0d1117'} onChange={(e) => handleConfigChange('streak', { bgColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
-                        <input type="text" value={streakConfig.bgColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('streak', { bgColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Border Color</label>
-                      <div className="flex gap-1.5 items-center">
-                        <input type="color" value={streakConfig.borderColor || '#27272a'} onChange={(e) => handleConfigChange('streak', { borderColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
-                        <input type="text" value={streakConfig.borderColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('streak', { borderColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Fire (Highlight)</label>
-                      <div className="flex gap-1.5 items-center">
-                        <input type="color" value={streakConfig.fireColor || '#ff9d00'} onChange={(e) => handleConfigChange('streak', { fireColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
-                        <input type="text" value={streakConfig.fireColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('streak', { fireColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Streak Ring</label>
-                      <div className="flex gap-1.5 items-center">
-                        <input type="color" value={streakConfig.ringColor || '#818cf8'} onChange={(e) => handleConfigChange('streak', { ringColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
-                        <input type="text" value={streakConfig.ringColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('streak', { ringColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
-                      </div>
-                    </div>
+              {/* Section 2 — THEME */}
+              <div className="border-b border-white/5 pb-4">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 2 — Theme</label>
+                <div className="flex gap-2 items-center">
+                  <select
+                    value={streakConfig.theme}
+                    onChange={(e) => handleConfigChange('streak', { theme: e.target.value })}
+                    className="flex-1 px-3 py-2 bg-zinc-900 border border-white/5 rounded-lg text-xs text-zinc-200 font-mono"
+                  >
+                    {STATS_CARD_THEMES.map((theme) => (
+                      <option key={theme.value} value={theme.value}>
+                        {theme.name}
+                      </option>
+                    ))}
+                    <option value="custom">Custom Theme</option>
+                  </select>
+                  <div className="flex gap-1 bg-zinc-900 border border-white/5 rounded-lg p-1.5 shrink-0">
+                    {(() => {
+                      const pal = THEME_PALETTES[streakConfig.theme] || THEME_PALETTES.github_dark;
+                      return (
+                        <>
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pal.bg }} title="Background" />
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pal.title }} title="Title" />
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pal.text }} title="Text" />
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pal.accent }} title="Accent" />
+                        </>
+                      );
+                    })()}
                   </div>
+                </div>
+              </div>
 
-                  <div className="grid grid-cols-2 gap-2.5">
+              {/* Section 3 — LAYOUT OPTIONS */}
+              <div className="border-b border-white/5 pb-4 space-y-3">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider">Section 3 — Layout Options</label>
+                
+                <div>
+                  <label className="block text-[10px] text-zinc-400 mb-1">Flame / Icon Style</label>
+                  <select
+                    value={streakConfig.flameStyle || 'fire'}
+                    onChange={(e) => handleConfigChange('streak', { flameStyle: e.target.value })}
+                    className="w-full px-2.5 py-1.5 bg-zinc-900 border border-white/5 rounded-md text-xs text-zinc-200"
+                  >
+                    <option value="fire">Fire Emoji 🔥</option>
+                    <option value="lightning">Lightning Bolt ⚡</option>
+                    <option value="star">Glowing Star ⭐</option>
+                  </select>
+                </div>
+
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400 font-semibold">Compact Mode</span>
+                  <CustomToggle
+                    checked={!!streakConfig.compactMode}
+                    onChange={(checked) => handleConfigChange('streak', { compactMode: checked })}
+                  />
+                </div>
+              </div>
+
+              {/* Section 4 — DISPLAY OPTIONS */}
+              <div className="border-b border-white/5 pb-4 space-y-2">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 4 — Display Options</label>
+                
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Hide Borders</span>
+                  <CustomToggle
+                    checked={!!streakConfig.hideBorder}
+                    onChange={(checked) => handleConfigChange('streak', { hideBorder: checked })}
+                  />
+                </div>
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Show Fire Icon</span>
+                  <CustomToggle
+                    checked={streakConfig.showFireIcon !== false}
+                    onChange={(checked) => handleConfigChange('streak', { showFireIcon: checked })}
+                  />
+                </div>
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Show Date Ranges</span>
+                  <CustomToggle
+                    checked={streakConfig.showDateRanges !== false}
+                    onChange={(checked) => handleConfigChange('streak', { showDateRanges: checked })}
+                  />
+                </div>
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Show Labels</span>
+                  <CustomToggle
+                    checked={streakConfig.showLabels !== false}
+                    onChange={(checked) => handleConfigChange('streak', { showLabels: checked })}
+                  />
+                </div>
+              </div>
+
+              {/* Section 5 — DATA OPTIONS */}
+              <div className="border-b border-white/5 pb-4">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 5 — Data Options</label>
+                <div className="p-3 bg-zinc-900/60 border border-white/5 rounded-xl text-center">
+                  <span className="text-[10px] text-zinc-500 font-mono">Synced to profile contributions</span>
+                </div>
+              </div>
+
+              {/* Section 6 — COLORS */}
+              {streakConfig.theme === 'custom' && (
+                <div className="border-b border-white/5 pb-4 space-y-3">
+                  <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider">Section 6 — Custom Colors</label>
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Stroke (Detail)</label>
-                      <div className="flex gap-1.5 items-center">
-                        <input type="color" value={streakConfig.strokeColor || '#2c2c2c'} onChange={(e) => handleConfigChange('streak', { strokeColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
-                        <input type="text" value={streakConfig.strokeColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('streak', { strokeColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
-                      </div>
+                      <label className="block text-[9px] font-semibold text-zinc-455 mb-1">BG Color</label>
+                      <input type="color" value={streakConfig.bgColor || '#0d1117'} onChange={(e) => handleConfigChange('streak', { bgColor: e.target.value })} className="w-full h-8 bg-zinc-900 border border-white/5 rounded cursor-pointer" />
                     </div>
                     <div>
-                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Text Color</label>
-                      <div className="flex gap-1.5 items-center">
-                        <input type="color" value={streakConfig.textColor || '#d4d4d8'} onChange={(e) => handleConfigChange('streak', { textColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
-                        <input type="text" value={streakConfig.textColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('streak', { textColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
-                      </div>
+                      <label className="block text-[9px] font-semibold text-zinc-455 mb-1">Border Color</label>
+                      <input type="color" value={streakConfig.borderColor || '#27272a'} onChange={(e) => handleConfigChange('streak', { borderColor: e.target.value })} className="w-full h-8 bg-zinc-900 border border-white/5 rounded cursor-pointer" />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-455 mb-1">Fire (Highlight)</label>
+                      <input type="color" value={streakConfig.fireColor || '#ff9d00'} onChange={(e) => handleConfigChange('streak', { fireColor: e.target.value })} className="w-full h-8 bg-zinc-900 border border-white/5 rounded cursor-pointer" />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-455 mb-1">Streak Ring</label>
+                      <input type="color" value={streakConfig.ringColor || '#818cf8'} onChange={(e) => handleConfigChange('streak', { ringColor: e.target.value })} className="w-full h-8 bg-zinc-900 border border-white/5 rounded cursor-pointer" />
                     </div>
                   </div>
                 </div>
-              </details>
+              )}
+
+              {/* Section 7 — ADVANCED */}
+              <div>
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 7 — Advanced</label>
+                <div className="p-3 bg-zinc-900/60 border border-white/5 rounded-xl text-center">
+                  <span className="text-[10px] text-zinc-500 font-mono">No advanced settings available</span>
+                </div>
+              </div>
             </div>
           );
         })()}
@@ -648,112 +831,221 @@ export default function Inspector() {
         {type === 'languages' && (() => {
           const langConfig = config.languages || { 
             theme: 'github_dark', 
+            variant: 'classic',
             hideBorder: true, 
-            layout: 'normal',
             langsCount: 5,
             hideProgress: false,
+            showPercentages: true,
+            showIcons: true,
+            includeForks: false,
+            excludeLanguages: [] as string[],
+            compactMode: false,
             bgColor: '',
             titleColor: '',
             textColor: '',
             borderColor: '',
           };
+
+          const langVariants = [
+            { id: 'classic', label: 'Classic List', desc: 'Ratio bar + grid legend' },
+            { id: 'donut', label: 'Donut Chart', desc: 'Circular donut diagram' },
+            { id: 'grid', label: 'Grid Cards', desc: 'Language grids' },
+            { id: 'list', label: 'Vertical List', desc: 'Detailed rows & progress' },
+            { id: 'waffle', label: 'Waffle Chart', desc: '100 colored boxes' },
+            { id: 'cloud', label: 'Language Cloud', desc: 'Word cloud keywords' },
+          ];
+
           return (
             <div className="space-y-4">
-              <div>
-                <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Visual Theme</label>
-                <select
-                  value={langConfig.theme}
-                  onChange={(e) => handleConfigChange('languages', { theme: e.target.value })}
-                  className="w-full px-3 py-2 bg-zinc-900 border border-white/5 rounded-lg text-xs text-zinc-200 font-mono"
-                >
-                  {STATS_CARD_THEMES.map((theme) => (
-                    <option key={theme.value} value={theme.value}>
-                      {theme.name}
-                    </option>
+              {/* Section 1 — DESIGN VARIANT */}
+              <div className="border-b border-white/5 pb-4">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 1 — Design Variant</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {langVariants.map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => handleConfigChange('languages', { variant: v.id })}
+                      className={cn(
+                        "p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer h-[76px]",
+                        (langConfig.variant || 'classic') === v.id
+                          ? "bg-indigo-500/10 border-indigo-500 text-white shadow-lg shadow-indigo-500/5"
+                          : "bg-zinc-900 border-white/5 text-zinc-450 hover:border-white/10 hover:bg-zinc-850"
+                      )}
+                    >
+                      <span className="text-[10px] font-bold block">{v.label}</span>
+                      <span className="text-[8px] text-zinc-500 block leading-tight mt-1">{v.desc}</span>
+                    </button>
                   ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Card Layout</label>
-                <select
-                  value={langConfig.layout}
-                  onChange={(e) => handleConfigChange('languages', { layout: e.target.value as any })}
-                  className="w-full px-3 py-2 bg-zinc-900 border border-white/5 rounded-lg text-xs text-zinc-200"
-                >
-                  <option value="normal">Normal Breakdown List</option>
-                  <option value="compact">Compact Ring Layout</option>
-                </select>
-              </div>
-              <div className="flex justify-between items-center py-1.5 select-none">
-                <span className="text-[11px] font-semibold text-zinc-400">Hide Borders</span>
-                <CustomToggle
-                  checked={!!langConfig.hideBorder}
-                  onChange={(checked) => handleConfigChange('languages', { hideBorder: checked })}
-                />
-              </div>
-              <div className="flex justify-between items-center py-1.5 select-none">
-                <span className="text-[11px] font-semibold text-zinc-400">Hide Progress Bar</span>
-                <CustomToggle
-                  checked={!!langConfig.hideProgress}
-                  onChange={(checked) => handleConfigChange('languages', { hideProgress: checked })}
-                />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Max Languages Displayed ({langConfig.langsCount !== undefined ? langConfig.langsCount : 5})</label>
-                <input
-                  type="range"
-                  min="1"
-                  max="10"
-                  step="1"
-                  value={langConfig.langsCount !== undefined ? langConfig.langsCount : 5}
-                  onChange={(e) => handleConfigChange('languages', { langsCount: parseInt(e.target.value) })}
-                  className="w-full accent-indigo-500 cursor-pointer"
-                />
-              </div>
-
-              {/* Custom Styles */}
-              <details className="group border border-white/5 rounded-xl bg-zinc-950/20 overflow-hidden">
-                <summary className="flex justify-between items-center p-3 text-xs font-bold text-zinc-350 cursor-pointer select-none hover:bg-white/5">
-                  <span>Custom Color Studio</span>
-                  <span className="text-[10px] text-indigo-400 group-open:rotate-180 transition-transform">▼</span>
-                </summary>
-                <div className="p-3 border-t border-white/5 space-y-3.5 bg-[#15121b]/40">
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div>
-                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">BG Color</label>
-                      <div className="flex gap-1.5 items-center">
-                        <input type="color" value={langConfig.bgColor || '#0d1117'} onChange={(e) => handleConfigChange('languages', { bgColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
-                        <input type="text" value={langConfig.bgColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('languages', { bgColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Title Color</label>
-                      <div className="flex gap-1.5 items-center">
-                        <input type="color" value={langConfig.titleColor || '#818cf8'} onChange={(e) => handleConfigChange('languages', { titleColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
-                        <input type="text" value={langConfig.titleColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('languages', { titleColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
-                      </div>
-                    </div>
+              {/* Section 2 — THEME */}
+              <div className="border-b border-white/5 pb-4">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 2 — Theme</label>
+                <div className="flex gap-2 items-center">
+                  <select
+                    value={langConfig.theme}
+                    onChange={(e) => handleConfigChange('languages', { theme: e.target.value })}
+                    className="flex-1 px-3 py-2 bg-zinc-900 border border-white/5 rounded-lg text-xs text-zinc-200 font-mono"
+                  >
+                    {STATS_CARD_THEMES.map((theme) => (
+                      <option key={theme.value} value={theme.value}>
+                        {theme.name}
+                      </option>
+                    ))}
+                    <option value="custom">Custom Theme</option>
+                  </select>
+                  <div className="flex gap-1 bg-zinc-900 border border-white/5 rounded-lg p-1.5 shrink-0">
+                    {(() => {
+                      const pal = THEME_PALETTES[langConfig.theme] || THEME_PALETTES.github_dark;
+                      return (
+                        <>
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pal.bg }} title="Background" />
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pal.title }} title="Title" />
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pal.text }} title="Text" />
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pal.accent }} title="Accent" />
+                        </>
+                      );
+                    })()}
                   </div>
+                </div>
+              </div>
 
-                  <div className="grid grid-cols-2 gap-2.5">
+              {/* Section 3 — LAYOUT OPTIONS */}
+              <div className="border-b border-white/5 pb-4 space-y-3">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider">Section 3 — Layout Options</label>
+                
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400 font-semibold">Compact Mode</span>
+                  <CustomToggle
+                    checked={!!langConfig.compactMode}
+                    onChange={(checked) => handleConfigChange('languages', { compactMode: checked })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] text-zinc-400 mb-1">Max Languages Displayed ({langConfig.langsCount !== undefined ? langConfig.langsCount : 5})</label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    step="1"
+                    value={langConfig.langsCount !== undefined ? langConfig.langsCount : 5}
+                    onChange={(e) => handleConfigChange('languages', { langsCount: parseInt(e.target.value) })}
+                    className="w-full accent-indigo-500 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* Section 4 — DISPLAY OPTIONS */}
+              <div className="border-b border-white/5 pb-4 space-y-2">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 4 — Display Options</label>
+                
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Hide Borders</span>
+                  <CustomToggle
+                    checked={!!langConfig.hideBorder}
+                    onChange={(checked) => handleConfigChange('languages', { hideBorder: checked })}
+                  />
+                </div>
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Hide Progress Bar</span>
+                  <CustomToggle
+                    checked={!!langConfig.hideProgress}
+                    onChange={(checked) => handleConfigChange('languages', { hideProgress: checked })}
+                  />
+                </div>
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Show Percentages</span>
+                  <CustomToggle
+                    checked={langConfig.showPercentages !== false}
+                    onChange={(checked) => handleConfigChange('languages', { showPercentages: checked })}
+                  />
+                </div>
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Show Icons</span>
+                  <CustomToggle
+                    checked={langConfig.showIcons !== false}
+                    onChange={(checked) => handleConfigChange('languages', { showIcons: checked })}
+                  />
+                </div>
+              </div>
+
+              {/* Section 5 — DATA OPTIONS */}
+              <div className="border-b border-white/5 pb-4 space-y-3">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 5 — Data Options</label>
+                
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Include Repository Forks</span>
+                  <CustomToggle
+                    checked={!!langConfig.includeForks}
+                    onChange={(checked) => handleConfigChange('languages', { includeForks: checked })}
+                  />
+                </div>
+
+                {/* Exclude Languages Interactive Checklist */}
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] text-zinc-400 font-semibold">Exclude Languages</label>
+                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1.5 bg-zinc-950/20 border border-white/5 rounded-md">
+                    {languages.map((l) => {
+                      const isExcluded = (langConfig.excludeLanguages || []).includes(l.name);
+                      return (
+                        <button
+                          key={l.name}
+                          type="button"
+                          onClick={() => {
+                            const list = langConfig.excludeLanguages || [];
+                            const newList = isExcluded ? list.filter(x => x !== l.name) : [...list, l.name];
+                            handleConfigChange('languages', { excludeLanguages: newList });
+                          }}
+                          className={cn(
+                            "text-[9px] px-2 py-0.5 rounded border transition cursor-pointer font-bold",
+                            isExcluded
+                              ? "bg-red-500/10 border-red-500/30 text-red-400"
+                              : "bg-zinc-850 border-white/5 text-zinc-400 hover:text-white"
+                          )}
+                        >
+                          {l.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 6 — COLORS */}
+              {langConfig.theme === 'custom' && (
+                <div className="border-b border-white/5 pb-4 space-y-3">
+                  <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider">Section 6 — Custom Colors</label>
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Text Color</label>
-                      <div className="flex gap-1.5 items-center">
-                        <input type="color" value={langConfig.textColor || '#e4e4e7'} onChange={(e) => handleConfigChange('languages', { textColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
-                        <input type="text" value={langConfig.textColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('languages', { textColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
-                      </div>
+                      <label className="block text-[9px] font-semibold text-zinc-455 mb-1">BG Color</label>
+                      <input type="color" value={langConfig.bgColor || '#0d1117'} onChange={(e) => handleConfigChange('languages', { bgColor: e.target.value })} className="w-full h-8 bg-zinc-900 border border-white/5 rounded cursor-pointer" />
                     </div>
                     <div>
-                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Border Color</label>
-                      <div className="flex gap-1.5 items-center">
-                        <input type="color" value={langConfig.borderColor || '#27272a'} onChange={(e) => handleConfigChange('languages', { borderColor: e.target.value })} className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0" />
-                        <input type="text" value={langConfig.borderColor || ''} placeholder="Theme" onChange={(e) => handleConfigChange('languages', { borderColor: e.target.value })} className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[9px] font-mono text-zinc-200 focus:outline-none" />
-                      </div>
+                      <label className="block text-[9px] font-semibold text-zinc-455 mb-1">Title Color</label>
+                      <input type="color" value={langConfig.titleColor || '#818cf8'} onChange={(e) => handleConfigChange('languages', { titleColor: e.target.value })} className="w-full h-8 bg-zinc-900 border border-white/5 rounded cursor-pointer" />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-455 mb-1">Text Color</label>
+                      <input type="color" value={langConfig.textColor || '#e4e4e7'} onChange={(e) => handleConfigChange('languages', { textColor: e.target.value })} className="w-full h-8 bg-zinc-900 border border-white/5 rounded cursor-pointer" />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-semibold text-zinc-455 mb-1">Border Color</label>
+                      <input type="color" value={langConfig.borderColor || '#27272a'} onChange={(e) => handleConfigChange('languages', { borderColor: e.target.value })} className="w-full h-8 bg-zinc-900 border border-white/5 rounded cursor-pointer" />
                     </div>
                   </div>
                 </div>
-              </details>
+              )}
+
+              {/* Section 7 — ADVANCED */}
+              <div>
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 7 — Advanced</label>
+                <div className="p-3 bg-zinc-900/60 border border-white/5 rounded-xl text-center">
+                  <span className="text-[10px] text-zinc-500 font-mono">No advanced settings available</span>
+                </div>
+              </div>
             </div>
           );
         })()}
@@ -761,20 +1053,40 @@ export default function Inspector() {
         {type === 'trophies' && (() => {
           const trophyConfig = config.trophies || { 
             theme: 'github_dark', 
+            variant: 'classic',
             columnCount: 3,
             noBg: false,
             noFrame: false,
             marginW: 0,
             marginH: 0,
             selectedTrophies: [] as string[],
-            rankFilter: ''
+            rankFilter: '',
+            limitTrophiesCount: 0,
+            showProgress: true,
+            showNextRank: true,
+            showCategoryLabels: true,
+            compactMode: false,
+            includeUnranked: true,
           };
 
           const TROPHY_OPTIONS = [
             { id: 'Stars', label: 'Stars' },
             { id: 'Followers', label: 'Followers' },
             { id: 'Commits', label: 'Commits' },
-            { id: 'Repos', label: 'Repositories' }
+            { id: 'Repositories', label: 'Repositories' },
+            { id: 'PRs', label: 'Pull Requests' },
+            { id: 'Reviews', label: 'Reviews' },
+            { id: 'Issues', label: 'Issues' },
+            { id: 'Experience', label: 'Experience' },
+            { id: 'Achievements', label: 'Achievements' },
+          ];
+
+          const trophyVariants = [
+            { id: 'classic', label: 'Classic Grid', desc: 'Visual 3D trophy grids' },
+            { id: 'badges', label: 'Game Badges', desc: 'Circular badges' },
+            { id: 'ribbon', label: 'Ribbon Style', desc: 'Award ribbons' },
+            { id: 'minimal', label: 'Minimal Cards', desc: 'Flat text tags' },
+            { id: 'podium', label: 'Podium View', desc: 'Top 3 winners stand' },
           ];
 
           const toggleTrophySelection = (id: string) => {
@@ -790,118 +1102,212 @@ export default function Inspector() {
 
           return (
             <div className="space-y-4">
-              <div>
-                <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Visual Theme</label>
-                <select
-                  value={trophyConfig.theme}
-                  onChange={(e) => handleConfigChange('trophies', { theme: e.target.value })}
-                  className="w-full px-3 py-2 bg-zinc-900 border border-white/5 rounded-lg text-xs text-zinc-200 font-mono"
-                >
-                  {STATS_CARD_THEMES.map((theme) => (
-                    <option key={theme.value} value={theme.value}>
-                      {theme.name}
-                    </option>
+              {/* Section 1 — DESIGN VARIANT */}
+              <div className="border-b border-white/5 pb-4">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 1 — Design Variant</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {trophyVariants.map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => handleConfigChange('trophies', { variant: v.id })}
+                      className={cn(
+                        "p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer h-[76px]",
+                        (trophyConfig.variant || 'classic') === v.id
+                          ? "bg-indigo-500/10 border-indigo-500 text-white shadow-lg shadow-indigo-500/5"
+                          : "bg-zinc-900 border-white/5 text-zinc-450 hover:border-white/10 hover:bg-zinc-850"
+                      )}
+                    >
+                      <span className="text-[10px] font-bold block">{v.label}</span>
+                      <span className="text-[8px] text-zinc-500 block leading-tight mt-1">{v.desc}</span>
+                    </button>
                   ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Max Columns ({trophyConfig.columnCount})</label>
-                <input
-                  type="range"
-                  min="1"
-                  max="6"
-                  step="1"
-                  value={trophyConfig.columnCount}
-                  onChange={(e) => handleConfigChange('trophies', { columnCount: Number(e.target.value) })}
-                  className="w-full accent-indigo-500 cursor-pointer"
-                />
-              </div>
-
-              <div className="flex justify-between items-center py-1.5 select-none">
-                <span className="text-[11px] font-semibold text-zinc-400">Transparent Background</span>
-                <CustomToggle
-                  checked={!!trophyConfig.noBg}
-                  onChange={(checked) => handleConfigChange('trophies', { noBg: checked })}
-                />
-              </div>
-
-              <div className="flex justify-between items-center py-1.5 select-none">
-                <span className="text-[11px] font-semibold text-zinc-400">Hide Trophy Frame Borders</span>
-                <CustomToggle
-                  checked={!!trophyConfig.noFrame}
-                  onChange={(checked) => handleConfigChange('trophies', { noFrame: checked })}
-                />
-              </div>
-
-              {/* Trophies Filter List */}
-              <div className="space-y-2">
-                <label className="block text-[11px] font-semibold text-zinc-400">Visible Trophies (Empty = All)</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {TROPHY_OPTIONS.map((tr) => {
-                    const isChecked = (trophyConfig.selectedTrophies || []).includes(tr.id);
-                    return (
-                      <button
-                        key={tr.id}
-                        type="button"
-                        onClick={() => toggleTrophySelection(tr.id)}
-                        className={cn(
-                          'text-[9px] px-2.5 py-1 rounded-md border font-semibold transition-all duration-150 cursor-pointer',
-                          isChecked
-                            ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400'
-                            : 'bg-zinc-850 border-white/5 text-zinc-450 hover:border-white/10 hover:text-zinc-300'
-                        )}
-                      >
-                        {tr.label}
-                      </button>
-                    );
-                  })}
                 </div>
               </div>
 
-              {/* Detailed Settings */}
-              <details className="group border border-white/5 rounded-xl bg-zinc-950/20 overflow-hidden">
-                <summary className="flex justify-between items-center p-3 text-xs font-bold text-zinc-350 cursor-pointer select-none hover:bg-white/5">
-                  <span>Advanced Layout & Ranks</span>
-                  <span className="text-[10px] text-indigo-400 group-open:rotate-180 transition-transform">▼</span>
-                </summary>
-                <div className="p-3 border-t border-white/5 space-y-3.5 bg-[#15121b]/40">
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div>
-                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Margin Width</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="50"
-                        value={trophyConfig.marginW !== undefined ? trophyConfig.marginW : 0}
-                        onChange={(e) => handleConfigChange('trophies', { marginW: parseInt(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[10px] font-mono text-zinc-200 focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Margin Height</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="50"
-                        value={trophyConfig.marginH !== undefined ? trophyConfig.marginH : 0}
-                        onChange={(e) => handleConfigChange('trophies', { marginH: parseInt(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[10px] font-mono text-zinc-200 focus:outline-none"
-                      />
-                    </div>
+              {/* Section 2 — THEME */}
+              <div className="border-b border-white/5 pb-4">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 2 — Theme</label>
+                <div className="flex gap-2 items-center">
+                  <select
+                    value={trophyConfig.theme}
+                    onChange={(e) => handleConfigChange('trophies', { theme: e.target.value })}
+                    className="w-full px-3 py-2 bg-zinc-900 border border-white/5 rounded-lg text-xs text-zinc-200 font-mono"
+                  >
+                    {STATS_CARD_THEMES.map((theme) => (
+                      <option key={theme.value} value={theme.value}>
+                        {theme.name}
+                      </option>
+                    ))}
+                    <option value="custom">Custom Theme</option>
+                  </select>
+                  <div className="flex gap-1 bg-zinc-900 border border-white/5 rounded-lg p-1.5 shrink-0">
+                    {(() => {
+                      const pal = THEME_PALETTES[trophyConfig.theme] || THEME_PALETTES.github_dark;
+                      return (
+                        <>
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pal.bg }} title="Background" />
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pal.title }} title="Title" />
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pal.text }} title="Text" />
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pal.accent }} title="Accent" />
+                        </>
+                      );
+                    })()}
                   </div>
+                </div>
+              </div>
 
+              {/* Section 3 — LAYOUT OPTIONS */}
+              <div className="border-b border-white/5 pb-4 space-y-3">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider">Section 3 — Layout Options</label>
+                
+                <div>
+                  <label className="block text-[10px] text-zinc-400 mb-1">Max Columns ({trophyConfig.columnCount})</label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="6"
+                    step="1"
+                    value={trophyConfig.columnCount}
+                    onChange={(e) => handleConfigChange('trophies', { columnCount: Number(e.target.value) })}
+                    className="w-full accent-indigo-500 cursor-pointer"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Rank Filter (e.g. SECRET,SSS,S,A)</label>
+                    <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Margin Width</label>
                     <input
-                      type="text"
-                      value={trophyConfig.rankFilter || ''}
-                      placeholder="e.g. SECRET,SSS,S,A"
-                      onChange={(e) => handleConfigChange('trophies', { rankFilter: e.target.value })}
-                      className="w-full px-2.5 py-1.5 bg-zinc-900 border border-white/5 rounded-md text-[10px] font-mono text-zinc-200 focus:outline-none"
+                      type="number"
+                      min="0"
+                      max="50"
+                      value={trophyConfig.marginW !== undefined ? trophyConfig.marginW : 0}
+                      onChange={(e) => handleConfigChange('trophies', { marginW: parseInt(e.target.value) || 0 })}
+                      className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[10px] font-mono text-zinc-200 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-semibold text-zinc-400 mb-1">Margin Height</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="50"
+                      value={trophyConfig.marginH !== undefined ? trophyConfig.marginH : 0}
+                      onChange={(e) => handleConfigChange('trophies', { marginH: parseInt(e.target.value) || 0 })}
+                      className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-md text-[10px] font-mono text-zinc-200 focus:outline-none"
                     />
                   </div>
                 </div>
-              </details>
+
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400 font-semibold">Compact Mode</span>
+                  <CustomToggle
+                    checked={!!trophyConfig.compactMode}
+                    onChange={(checked) => handleConfigChange('trophies', { compactMode: checked })}
+                  />
+                </div>
+              </div>
+
+              {/* Section 4 — DISPLAY OPTIONS */}
+              <div className="border-b border-white/5 pb-4 space-y-2">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 4 — Display Options</label>
+                
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Transparent Background</span>
+                  <CustomToggle
+                    checked={!!trophyConfig.noBg}
+                    onChange={(checked) => handleConfigChange('trophies', { noBg: checked })}
+                  />
+                </div>
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Hide Trophy Frame Borders</span>
+                  <CustomToggle
+                    checked={!!trophyConfig.noFrame}
+                    onChange={(checked) => handleConfigChange('trophies', { noFrame: checked })}
+                  />
+                </div>
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Show Progress Bar</span>
+                  <CustomToggle
+                    checked={trophyConfig.showProgress !== false}
+                    onChange={(checked) => handleConfigChange('trophies', { showProgress: checked })}
+                  />
+                </div>
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Show Category Titles</span>
+                  <CustomToggle
+                    checked={trophyConfig.showCategoryLabels !== false}
+                    onChange={(checked) => handleConfigChange('trophies', { showCategoryLabels: checked })}
+                  />
+                </div>
+              </div>
+
+              {/* Section 5 — DATA OPTIONS */}
+              <div className="border-b border-white/5 pb-4 space-y-3">
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 5 — Data Options</label>
+                
+                <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Include Unranked Trophies</span>
+                  <CustomToggle
+                    checked={trophyConfig.includeUnranked !== false}
+                    onChange={(checked) => handleConfigChange('trophies', { includeUnranked: checked })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] text-zinc-400 mb-1">Rank Filter (e.g. S, A, B)</label>
+                  <input
+                    type="text"
+                    value={trophyConfig.rankFilter || ''}
+                    placeholder="e.g. S, A, B"
+                    onChange={(e) => handleConfigChange('trophies', { rankFilter: e.target.value })}
+                    className="w-full px-2.5 py-1.5 bg-zinc-900 border border-white/5 rounded-md text-xs font-mono text-zinc-200 focus:outline-none"
+                  />
+                </div>
+
+                {/* Visible Trophies Selection */}
+                <div className="space-y-2">
+                  <label className="block text-[10px] text-zinc-400">Visible Trophies (Empty = All)</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {TROPHY_OPTIONS.map((tr) => {
+                      const isChecked = (trophyConfig.selectedTrophies || []).includes(tr.id);
+                      return (
+                        <button
+                          key={tr.id}
+                          type="button"
+                          onClick={() => toggleTrophySelection(tr.id)}
+                          className={cn(
+                            'text-[9px] px-2.5 py-1 rounded-md border font-semibold transition-all duration-150 cursor-pointer',
+                            isChecked
+                              ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400'
+                              : 'bg-zinc-850 border-white/5 text-zinc-450 hover:border-white/10 hover:text-zinc-350'
+                          )}
+                        >
+                          {tr.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 6 — COLORS */}
+              {trophyConfig.theme === 'custom' && (
+                <div className="border-b border-white/5 pb-4 space-y-3">
+                  <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider">Section 6 — Custom Colors</label>
+                  <div className="p-3 bg-zinc-900/60 border border-white/5 rounded-xl text-center">
+                    <span className="text-[10px] text-zinc-500 font-mono">Trophy colors scale by rank tier</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Section 7 — ADVANCED */}
+              <div>
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Section 7 — Advanced</label>
+                <div className="p-3 bg-zinc-900/60 border border-white/5 rounded-xl text-center">
+                  <span className="text-[10px] text-zinc-500 font-mono">No advanced settings available</span>
+                </div>
+              </div>
             </div>
           );
         })()}

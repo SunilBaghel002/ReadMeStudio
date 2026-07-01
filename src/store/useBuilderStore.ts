@@ -196,7 +196,7 @@ export const DEFAULT_SECTIONS = (username: string, name: string, bio: string): B
       languages: {
         theme: 'github_dark',
         hideBorder: true,
-        layout: 'compact',
+        variant: 'classic',
         langsCount: 5,
         hideProgress: false,
         bgColor: '',

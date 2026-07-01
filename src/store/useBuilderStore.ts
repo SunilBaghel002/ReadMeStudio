@@ -45,8 +45,10 @@ interface BuilderStore {
   showBanners: boolean;
   bannerImage: string;
   selectedSectionId: string | null;
+  hasHydrated: boolean;
 
   // Actions
+  setHasHydrated: (val: boolean) => void;
   setUsername: (username: string) => void;
   fetchUserData: (username: string) => Promise<boolean>;
   injectGitHubData: (data: GitHubStatsData) => void;
@@ -287,7 +289,9 @@ export const useBuilderStore = create<BuilderStore>()(
       showBanners: false,
       bannerImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80',
       selectedSectionId: 'header',
+      hasHydrated: false,
 
+      setHasHydrated: (hasHydrated) => set({ hasHydrated }),
       setUsername: (username) => set({ username }),
 
       fetchUserData: async (username) => {
@@ -590,6 +594,9 @@ export const useBuilderStore = create<BuilderStore>()(
         showBanners: state.showBanners,
         bannerImage: state.bannerImage,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

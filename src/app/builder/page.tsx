@@ -35,35 +35,33 @@ export default function BuilderPage() {
     bannerImage,
     accentColor,
     statsCardTheme,
-    readmeStyle
+    readmeStyle,
+    hasHydrated
   } = useBuilderStore();
 
   const [mobileTab, setMobileTab] = useState<'sections' | 'preview' | 'customize'>('preview');
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [markdown, setMarkdown] = useState('');
 
-  // Redirect to generate onboarding page if no GitHub data exists
+  // Redirect to generate onboarding page if no GitHub data exists, but ONLY after hydration completes
   useEffect(() => {
-    if (!githubData || !username) {
+    if (hasHydrated && (!githubData || !username)) {
       router.push('/generate');
     }
-  }, [githubData, username, router]);
+  }, [hasHydrated, githubData, username, router]);
 
-  // Re-generate markdown to keep export actions updated
-  useEffect(() => {
-    if (username) {
-      const md = generateMarkdown(sections, username, {
-        showEmojis,
-        showBanners,
-        bannerImage,
-        accentColor,
-        statsCardTheme,
-        readmeStyle,
-      });
-      setMarkdown(md);
-    }
-  }, [sections, username, showEmojis, showBanners, bannerImage, accentColor, statsCardTheme, readmeStyle]);
+  // Compute markdown output on-demand to prevent parent re-renders when typing
+  const getLatestMarkdown = () => {
+    if (!username) return '';
+    return generateMarkdown(sections, username, {
+      showEmojis,
+      showBanners,
+      bannerImage,
+      accentColor,
+      statsCardTheme,
+      readmeStyle,
+    });
+  };
 
   const handleSwitchProfile = () => {
     resetStore();
@@ -71,7 +69,8 @@ export default function BuilderPage() {
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(markdown);
+    const md = getLatestMarkdown();
+    navigator.clipboard.writeText(md);
     setCopied(true);
     confetti({
       particleCount: 50,
@@ -83,7 +82,8 @@ export default function BuilderPage() {
   };
 
   const handleDownload = () => {
-    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8;' });
+    const md = getLatestMarkdown();
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -93,10 +93,14 @@ export default function BuilderPage() {
     document.body.removeChild(link);
   };
 
-  if (!githubData || !username) {
+  // Wait for hydration and data check to prevent flicker / flash of loading state
+  if (!hasHydrated || (hasHydrated && (!githubData || !username))) {
     return (
-      <div className="min-h-screen bg-[#15121b] flex items-center justify-center text-zinc-500 text-sm">
-        <span>Loading workspace session...</span>
+      <div className="min-h-screen bg-[#15121b] flex items-center justify-center text-[#ccc3d8] text-sm font-sans">
+        <div className="flex flex-col items-center gap-3">
+          <span className="w-6 h-6 border-2 border-indigo-500/20 border-t-indigo-400 rounded-full animate-spin" />
+          <span>Restoring builder session...</span>
+        </div>
       </div>
     );
   }
@@ -226,7 +230,7 @@ export default function BuilderPage() {
       <ExportModal 
         isOpen={isExportOpen} 
         onClose={() => setIsExportOpen(false)} 
-        markdown={markdown}
+        markdown={isExportOpen ? getLatestMarkdown() : ''}
       />
     </div>
   );

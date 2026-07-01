@@ -29,65 +29,65 @@ import { LanguageStat, GitHubRepo } from '@/types/github.types';
 const StatsCardPreview = ({ stats, username }: { stats: any; username: string }) => {
   if (!stats) return null;
   return (
-    <div className="border border-zinc-800 rounded-xl p-5 bg-[#0d0c1d]/60 text-white max-w-md mx-auto my-4 shadow-lg font-sans">
-      <div className="flex items-center gap-2 mb-4">
+    <span className="block border border-zinc-800 rounded-xl p-5 bg-[#0d0c1d]/60 text-white max-w-md mx-auto my-4 shadow-lg font-sans text-left">
+      <span className="flex items-center gap-2 mb-4">
         <Activity className="h-4.5 w-4.5 text-indigo-400" />
-        <h4 className="text-sm font-bold text-indigo-300 font-mono">{username}'s GitHub Stats</h4>
-      </div>
-      <div className="grid grid-cols-2 gap-4 text-xs">
-        <div className="flex justify-between border-b border-white/5 pb-1.5">
+        <span className="text-sm font-bold text-indigo-300 font-mono">{username}'s GitHub Stats</span>
+      </span>
+      <span className="grid grid-cols-2 gap-4 text-xs block">
+        <span className="flex justify-between border-b border-white/5 pb-1.5">
           <span className="text-zinc-400 flex items-center gap-1.5"><Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500" /> Stars</span>
           <span className="font-bold font-mono text-yellow-400">{stats.totalStars}</span>
-        </div>
-        <div className="flex justify-between border-b border-white/5 pb-1.5">
+        </span>
+        <span className="flex justify-between border-b border-white/5 pb-1.5">
           <span className="text-zinc-400 flex items-center gap-1.5"><GitCommit className="h-3.5 w-3.5 text-blue-400" /> Commits</span>
           <span className="font-bold font-mono">{stats.totalCommits}</span>
-        </div>
-        <div className="flex justify-between border-b border-white/5 pb-1.5">
+        </span>
+        <span className="flex justify-between border-b border-white/5 pb-1.5">
           <span className="text-zinc-400 flex items-center gap-1.5"><GitPullRequest className="h-3.5 w-3.5 text-purple-400" /> PRs</span>
           <span className="font-bold font-mono">{stats.totalPRs}</span>
-        </div>
-        <div className="flex justify-between border-b border-white/5 pb-1.5">
+        </span>
+        <span className="flex justify-between border-b border-white/5 pb-1.5">
           <span className="text-zinc-400 flex items-center gap-1.5"><BookOpen className="h-3.5 w-3.5 text-emerald-400" /> Repos</span>
           <span className="font-bold font-mono">{stats.totalReposCreated}</span>
-        </div>
-      </div>
-    </div>
+        </span>
+      </span>
+    </span>
   );
 };
 
 const LanguagesCardPreview = ({ languages }: { languages: LanguageStat[] }) => {
   if (!languages || languages.length === 0) return null;
   return (
-    <div className="border border-zinc-800 rounded-xl p-5 bg-[#0d0c1d]/60 text-white max-w-md mx-auto my-4 shadow-lg font-sans">
-      <h4 className="text-sm font-bold text-indigo-300 mb-4 font-mono">Most Used Languages</h4>
-      <div className="space-y-3.5">
-        <div className="w-full h-2 rounded-full overflow-hidden flex bg-zinc-900">
+    <span className="block border border-zinc-800 rounded-xl p-5 bg-[#0d0c1d]/60 text-white max-w-md mx-auto my-4 shadow-lg font-sans text-left">
+      <span className="block text-sm font-bold text-indigo-300 mb-4 font-mono">Most Used Languages</span>
+      <span className="space-y-3.5 block">
+        <span className="w-full h-2 rounded-full overflow-hidden flex bg-zinc-900 block">
           {languages.map((lang) => (
-            <div
+            <span
               key={lang.name}
               style={{
                 width: `${lang.percentage}%`,
                 backgroundColor: lang.color,
               }}
-              className="h-full"
+              className="h-full block"
             />
           ))}
-        </div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+        </span>
+        <span className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs block">
           {languages.map((lang) => (
-            <div key={lang.name} className="flex items-center gap-2">
+            <span key={lang.name} className="flex items-center gap-2 block">
               <span
                 className="w-2.5 h-2.5 rounded-full inline-block shrink-0"
                 style={{ backgroundColor: lang.color }}
               />
               <span className="text-zinc-350 font-mono truncate">{lang.name}</span>
-              <span className="text-zinc-500 font-mono ml-auto">{lang.percentage}%</span>
-            </div>
+              <span className="text-zinc-550 font-mono ml-auto">{lang.percentage}%</span>
+            </span>
           ))}
-        </div>
-      </div>
-    </div>
+        </span>
+      </span>
+    </span>
   );
 };
 
@@ -114,20 +114,20 @@ const TrophiesCardPreview = ({ stats, profile }: { stats: any; profile: any }) =
   ];
 
   return (
-    <div className="border border-zinc-800 rounded-xl p-5 bg-[#0d0c1d]/60 text-white max-w-lg mx-auto my-4 shadow-lg font-sans">
-      <h4 className="text-sm font-bold text-indigo-300 mb-4 font-mono">GitHub Profile Trophies</h4>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <span className="block border border-zinc-800 rounded-xl p-5 bg-[#0d0c1d]/60 text-white max-w-lg mx-auto my-4 shadow-lg font-sans text-left">
+      <span className="block text-sm font-bold text-indigo-300 mb-4 font-mono">GitHub Profile Trophies</span>
+      <span className="grid grid-cols-2 sm:grid-cols-4 gap-3 block">
         {trophies.map((tr) => (
-          <div key={tr.title} className="p-3 bg-zinc-900/60 border border-white/5 rounded-lg text-center flex flex-col justify-between items-center shadow">
+          <span key={tr.title} className="p-3 bg-zinc-900/60 border border-white/5 rounded-lg text-center flex flex-col justify-between items-center shadow block">
             <span className="text-[10px] text-zinc-400 uppercase font-mono mb-1">{tr.title}</span>
-            <div className={`text-xl font-black bg-gradient-to-r ${tr.color} bg-clip-text text-transparent my-1`}>
+            <span className={`block text-xl font-black bg-gradient-to-r ${tr.color} bg-clip-text text-transparent my-1`}>
               {tr.grade}
-            </div>
+            </span>
             <span className="text-xs font-bold font-mono text-zinc-350">{tr.value}</span>
-          </div>
+          </span>
         ))}
-      </div>
-    </div>
+      </span>
+    </span>
   );
 };
 
@@ -135,30 +135,30 @@ const RepositoryPinPreview = ({ repoName, topRepos }: { repoName: string; topRep
   const repo = topRepos.find(r => r.name.toLowerCase() === repoName.toLowerCase());
   if (!repo) {
     return (
-      <div className="border border-zinc-800 rounded-xl p-4 bg-[#0d0c1d]/60 text-white max-w-sm my-2 shadow-md inline-block text-left font-sans mr-3 w-80">
-        <div className="flex items-center gap-2">
+      <span className="block border border-zinc-800 rounded-xl p-4 bg-[#0d0c1d]/60 text-white max-w-sm my-2 shadow-md inline-block text-left font-sans mr-3 w-80">
+        <span className="flex items-center gap-2 block">
           <Bookmark className="h-4 w-4 text-blue-400 shrink-0" />
           <span className="text-xs font-bold text-blue-400 truncate">{repoName}</span>
-        </div>
-        <p className="text-[10px] text-zinc-550 mt-1">Repository is private or loading...</p>
-      </div>
+        </span>
+        <span className="block text-[10px] text-zinc-550 mt-1">Repository is private or loading...</span>
+      </span>
     );
   }
 
   return (
-    <div className="border border-zinc-800 rounded-xl p-4 bg-[#0d0c1d]/60 text-white max-w-sm my-2 shadow-md inline-block text-left font-sans mr-3 w-80">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 truncate">
+    <span className="block border border-zinc-800 rounded-xl p-4 bg-[#0d0c1d]/60 text-white max-w-sm my-2 shadow-md inline-block text-left font-sans mr-3 w-80">
+      <span className="flex items-center justify-between block">
+        <span className="flex items-center gap-2 truncate block">
           <Bookmark className="h-4 w-4 text-blue-400 shrink-0" />
-          <a href={repo.htmlUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-blue-400 hover:underline truncate">
+          <span className="text-xs font-bold text-blue-400 truncate">
             {repo.name}
-          </a>
-        </div>
-      </div>
-      <p className="text-[10px] text-zinc-400 mt-2 line-clamp-2 min-h-[30px] leading-relaxed">
+          </span>
+        </span>
+      </span>
+      <span className="block text-[10px] text-zinc-400 mt-2 line-clamp-2 min-h-[30px] leading-relaxed">
         {repo.description || 'No description available for this project.'}
-      </p>
-      <div className="flex gap-4 text-[10px] font-mono text-zinc-550 mt-3 pt-2 border-t border-white/3">
+      </span>
+      <span className="flex gap-4 text-[10px] font-mono text-zinc-550 mt-3 pt-2 border-t border-white/3 block">
         {repo.language && (
           <span className="flex items-center gap-1">
             <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: '#3178c6' }} />
@@ -173,8 +173,8 @@ const RepositoryPinPreview = ({ repoName, topRepos }: { repoName: string; topRep
           <GitFork className="h-3.5 w-3.5 text-zinc-500" />
           <span>{repo.forks}</span>
         </span>
-      </div>
-    </div>
+      </span>
+    </span>
   );
 };
 
@@ -202,15 +202,19 @@ export default function PreviewPanel() {
   const [markdown, setMarkdown] = useState('');
 
   useEffect(() => {
-    const md = generateMarkdown(sections, username, {
-      showEmojis,
-      showBanners,
-      bannerImage,
-      accentColor,
-      statsCardTheme,
-      readmeStyle,
-    });
-    setMarkdown(md);
+    const timer = setTimeout(() => {
+      const md = generateMarkdown(sections, username, {
+        showEmojis,
+        showBanners,
+        bannerImage,
+        accentColor,
+        statsCardTheme,
+        readmeStyle,
+      });
+      setMarkdown(md);
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [sections, username, showEmojis, showBanners, bannerImage, accentColor, statsCardTheme, readmeStyle]);
 
   const handleCopy = () => {

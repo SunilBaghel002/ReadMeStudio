@@ -71,10 +71,6 @@ export default function WebGLBackground() {
           color = mix(color, color3, n2 * 0.06);
           color = mix(color, vec3(0.024, 0.714, 0.831), n3 * 0.02); // Cyan accent
           
-          // Add subtle noise
-          float noise = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
-          color += noise * 0.015;
-
           gl_FragColor = vec4(color, 1.0);
       }
     `;
@@ -138,7 +134,6 @@ export default function WebGLBackground() {
 
     // Animation render loop
     const render = (time: number) => {
-      syncSize();
       gl.viewport(0, 0, canvas.width, canvas.height);
       if (uTime) gl.uniform1f(uTime, time * 0.001);
       if (uRes) gl.uniform2f(uRes, canvas.width, canvas.height);

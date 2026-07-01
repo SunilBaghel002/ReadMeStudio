@@ -7,6 +7,7 @@ import SectionList from '@/components/Builder/SectionList';
 import PreviewPanel from '@/components/Preview/PreviewPanel';
 import Inspector from '@/components/Builder/Inspector';
 import ExportModal from '@/components/Preview/ExportModal';
+import TemplateSelectorModal from '@/components/Preview/TemplateSelectorModal';
 import Link from 'next/link';
 import { generateMarkdown } from '@/lib/markdown';
 import { 
@@ -41,6 +42,7 @@ export default function BuilderPage() {
 
   const [mobileTab, setMobileTab] = useState<'sections' | 'preview' | 'customize'>('preview');
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
   // Redirect to generate onboarding page if no GitHub data exists, but ONLY after hydration completes
@@ -127,6 +129,13 @@ export default function BuilderPage() {
 
         {/* Action button controls */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsTemplateModalOpen(true)}
+            className="text-[10px] uppercase tracking-wider text-zinc-350 hover:text-white font-bold px-3 py-2 border border-[#7c3aed]/20 bg-[#7c3aed]/5 hover:bg-[#7c3aed]/10 rounded-lg mr-2 transition-all cursor-pointer hidden sm:flex items-center gap-1.5"
+          >
+            <Layout className="h-3.5 w-3.5 text-indigo-400" />
+            <span>Templates</span>
+          </button>
           <button
             onClick={handleSwitchProfile}
             className="text-[10px] uppercase tracking-wider text-zinc-500 hover:text-zinc-350 font-bold px-3 py-2 border border-white/5 rounded-lg mr-2 transition-colors cursor-pointer hidden sm:block"
@@ -231,6 +240,12 @@ export default function BuilderPage() {
         isOpen={isExportOpen} 
         onClose={() => setIsExportOpen(false)} 
         markdown={isExportOpen ? getLatestMarkdown() : ''}
+      />
+
+      {/* Template selection and preview modal */}
+      <TemplateSelectorModal 
+        isOpen={isTemplateModalOpen} 
+        onClose={() => setIsTemplateModalOpen(false)} 
       />
     </div>
   );

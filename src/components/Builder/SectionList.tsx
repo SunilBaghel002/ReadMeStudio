@@ -38,7 +38,9 @@ import {
   Compass,
   MessageSquare,
   Terminal,
-  FileText
+  FileText,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -58,6 +60,9 @@ const CATEGORY_ICONS: Record<SectionType, React.ComponentType<any>> = {
   quote: MessageSquare,
   typing: Terminal,
   custom: FileText,
+  'activity-graph': BarChart3,
+  'snake-game': Flame,
+  'goals-list': FileText,
 };
 
 // Drag & Drop Sortable Item Component
@@ -67,9 +72,23 @@ interface SortableItemProps {
   onSelect: () => void;
   onToggle: (e: React.MouseEvent) => void;
   onDelete: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  isFirst: boolean;
+  isLast: boolean;
 }
 
-function SortableSectionItem({ section, isSelected, onSelect, onToggle, onDelete }: SortableItemProps) {
+function SortableSectionItem({ 
+  section, 
+  isSelected, 
+  onSelect, 
+  onToggle, 
+  onDelete, 
+  onMoveUp, 
+  onMoveDown,
+  isFirst,
+  isLast
+}: SortableItemProps) {
   const {
     attributes,
     listeners,
@@ -104,12 +123,44 @@ function SortableSectionItem({ section, isSelected, onSelect, onToggle, onDelete
         <button
           {...attributes}
           {...listeners}
-          className="p-1 text-zinc-600 hover:text-zinc-400 cursor-grab active:cursor-grabbing shrink-0"
+          className="p-1 text-zinc-650 hover:text-zinc-400 cursor-grab active:cursor-grabbing shrink-0"
           title="Drag to reorder"
           onClick={(e) => e.stopPropagation()}
         >
           <GripVertical className="h-4 w-4" />
         </button>
+
+        {/* Up / Down Click Controls */}
+        <div className="flex flex-col gap-0.5 shrink-0">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onMoveUp();
+            }}
+            disabled={isFirst}
+            className={cn(
+              "p-0.5 rounded transition-colors text-zinc-600 hover:text-zinc-250 hover:bg-zinc-800/60",
+              isFirst ? "opacity-10 cursor-not-allowed" : "cursor-pointer"
+            )}
+            title="Move Up"
+          >
+            <ChevronUp className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onMoveDown();
+            }}
+            disabled={isLast}
+            className={cn(
+              "p-0.5 rounded transition-colors text-zinc-600 hover:text-zinc-250 hover:bg-zinc-800/60",
+              isLast ? "opacity-10 cursor-not-allowed" : "cursor-pointer"
+            )}
+            title="Move Down"
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+        </div>
 
         <IconComponent className="h-4 w-4 text-indigo-400 shrink-0" />
 
@@ -130,7 +181,7 @@ function SortableSectionItem({ section, isSelected, onSelect, onToggle, onDelete
               e.stopPropagation();
               onDelete();
             }}
-            className="p-1 rounded bg-zinc-900 border border-white/5 text-zinc-500 hover:text-red-400 transition-colors cursor-pointer"
+            className="p-1 rounded bg-zinc-900 border border-white/5 text-zinc-550 hover:text-red-400 transition-colors cursor-pointer"
             title="Delete Section"
           >
             <Trash2 className="h-3 w-3" />
@@ -196,6 +247,13 @@ export default function SectionList() {
     }
   };
 
+  const moveSection = (index: number, direction: 'up' | 'down') => {
+    const nextIndex = direction === 'up' ? index - 1 : index + 1;
+    if (nextIndex < 0 || nextIndex >= sections.length) return;
+    const reordered = arrayMove(sections, index, nextIndex);
+    setSections(reordered);
+  };
+
   return (
     <div className="flex flex-col h-full bg-[#15121b] shrink-0">
       {/* Header */}
@@ -214,7 +272,7 @@ export default function SectionList() {
             items={sections.map((item) => item.id)}
             strategy={verticalListSortingStrategy}
           >
-            {sections.map((sec) => (
+            {sections.map((sec, idx) => (
               <SortableSectionItem
                 key={sec.id}
                 section={sec}
@@ -225,6 +283,10 @@ export default function SectionList() {
                   toggleSectionVisibility(sec.id);
                 }}
                 onDelete={() => deleteSection(sec.id)}
+                onMoveUp={() => moveSection(idx, 'up')}
+                onMoveDown={() => moveSection(idx, 'down')}
+                isFirst={idx === 0}
+                isLast={idx === sections.length - 1}
               />
             ))}
           </SortableContext>

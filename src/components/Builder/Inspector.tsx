@@ -13,6 +13,7 @@ import {
   Image as ImageIcon,
   Smile,
   Compass,
+  Sliders,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -65,6 +66,14 @@ export default function Inspector() {
     setBannerImage,
     loadTemplate,
     topRepos,
+    canvasBgColor,
+    setCanvasBgColor,
+    cardBgColor,
+    setCardBgColor,
+    cardBorderColor,
+    setCardBorderColor,
+    cardBgOpacity,
+    setCardBgOpacity,
   } = useBuilderStore();
 
   const selectedSection = sections.find((s) => s.id === selectedSectionId);
@@ -915,6 +924,112 @@ export default function Inspector() {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Canvas & Card Style Customizer */}
+            <div className="border-t border-white/5 pt-4 space-y-3.5">
+              <h4 className="text-xs font-bold text-zinc-450 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Sliders className="h-3.5 w-3.5 text-indigo-400" />
+                <span>Canvas & Card Styles</span>
+              </h4>
+
+              {/* Canvas Background Presets */}
+              <div className="space-y-2">
+                <label className="block text-[10px] font-semibold text-zinc-400">Canvas Background</label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[
+                    { name: 'GH Dark', hex: '#0d1117' },
+                    { name: 'GH Light', hex: '#ffffff' },
+                    { name: 'Obsidian', hex: '#080b14' },
+                    { name: 'Black', hex: '#000000' }
+                  ].map((preset) => (
+                    <button
+                      key={preset.hex}
+                      onClick={() => setCanvasBgColor(preset.hex)}
+                      className={cn(
+                        'text-[8px] py-1 border rounded font-semibold text-center transition-all truncate px-0.5 cursor-pointer',
+                        canvasBgColor === preset.hex
+                          ? 'border-indigo-500 bg-indigo-500/5 text-indigo-400'
+                          : 'border-white/5 bg-zinc-900 text-zinc-400 hover:text-zinc-250'
+                      )}
+                    >
+                      {preset.name}
+                    </button>
+                  ))}
+                </div>
+                {/* Custom Color Input */}
+                <div className="flex gap-2 items-center">
+                  <input 
+                    type="color"
+                    value={canvasBgColor.startsWith('#') ? canvasBgColor : '#0d1117'}
+                    onChange={(e) => setCanvasBgColor(e.target.value)}
+                    className="w-6 h-6 border-0 bg-transparent rounded cursor-pointer shrink-0"
+                  />
+                  <input
+                    type="text"
+                    value={canvasBgColor}
+                    onChange={(e) => setCanvasBgColor(e.target.value)}
+                    className="flex-1 px-3 py-1 bg-zinc-900 border border-white/5 rounded-lg text-[10px] font-mono text-zinc-250 focus:outline-none"
+                    placeholder="#hex color"
+                  />
+                </div>
+              </div>
+
+              {/* Card Color settings */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-semibold text-zinc-400 mb-1">Card Background</label>
+                  <div className="flex gap-1.5 items-center">
+                    <input 
+                      type="color"
+                      value={cardBgColor.startsWith('#') ? cardBgColor : '#0d0c1d'}
+                      onChange={(e) => setCardBgColor(e.target.value)}
+                      className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={cardBgColor}
+                      onChange={(e) => setCardBgColor(e.target.value)}
+                      className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-lg text-[9px] font-mono text-zinc-250 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-semibold text-zinc-400 mb-1">Card Border</label>
+                  <div className="flex gap-1.5 items-center">
+                    <input 
+                      type="color"
+                      value={cardBorderColor.startsWith('#') ? cardBorderColor : '#27272a'}
+                      onChange={(e) => setCardBorderColor(e.target.value)}
+                      className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={cardBorderColor}
+                      onChange={(e) => setCardBorderColor(e.target.value)}
+                      className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-lg text-[9px] font-mono text-zinc-250 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card Opacity slider */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-[10px] text-zinc-450">
+                  <span className="font-semibold">Card Opacity</span>
+                  <span className="font-mono text-indigo-400">{Math.round(cardBgOpacity * 100)}%</span>
+                </div>
+                <input 
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={cardBgOpacity}
+                  onChange={(e) => setCardBgOpacity(parseFloat(e.target.value))}
+                  className="w-full h-1 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                />
+              </div>
             </div>
 
             {/* Emoji Settings */}

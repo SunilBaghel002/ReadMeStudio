@@ -76,7 +76,10 @@ export type SectionType =
   | 'working-on'
   | 'quote'
   | 'typing'
-  | 'custom';
+  | 'custom'
+  | 'activity-graph'
+  | 'snake-game'
+  | 'goals-list';
 
 export interface SectionConfig {
   header?: {
@@ -153,6 +156,9 @@ export interface SectionConfig {
   custom?: {
     markdown: string;
   };
+  'activity-graph'?: any;
+  'snake-game'?: any;
+  'goals-list'?: any;
 }
 
 export interface BuilderSection {

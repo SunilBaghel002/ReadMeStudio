@@ -46,6 +46,10 @@ interface BuilderStore {
   bannerImage: string;
   selectedSectionId: string | null;
   hasHydrated: boolean;
+  canvasBgColor: string;
+  cardBgColor: string;
+  cardBorderColor: string;
+  cardBgOpacity: number;
 
   // Actions
   setHasHydrated: (val: boolean) => void;
@@ -64,6 +68,10 @@ interface BuilderStore {
   setShowBanners: (val: boolean) => void;
   setBannerImage: (url: string) => void;
   setSelectedSectionId: (id: string | null) => void;
+  setCanvasBgColor: (color: string) => void;
+  setCardBgColor: (color: string) => void;
+  setCardBorderColor: (color: string) => void;
+  setCardBgOpacity: (opacity: number) => void;
   resetStore: () => void;
   loadTemplate: (templateType: 'minimal' | 'fullstack' | 'opensource' | 'student' | 'creative' | 'devops') => void;
   addCustomSection: () => void;
@@ -71,7 +79,7 @@ interface BuilderStore {
   updateSectionTitle: (id: string, title: string) => void;
 }
 
-const DEFAULT_SECTIONS = (username: string, name: string, bio: string): BuilderSection[] => [
+export const DEFAULT_SECTIONS = (username: string, name: string, bio: string): BuilderSection[] => [
   {
     id: 'typing',
     type: 'typing',
@@ -290,9 +298,17 @@ export const useBuilderStore = create<BuilderStore>()(
       bannerImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80',
       selectedSectionId: 'header',
       hasHydrated: false,
+      canvasBgColor: '#0d1117',
+      cardBgColor: '#0d0c1d',
+      cardBorderColor: '#27272a',
+      cardBgOpacity: 0.6,
 
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
       setUsername: (username) => set({ username }),
+      setCanvasBgColor: (canvasBgColor) => set({ canvasBgColor }),
+      setCardBgColor: (cardBgColor) => set({ cardBgColor }),
+      setCardBorderColor: (cardBorderColor) => set({ cardBorderColor }),
+      setCardBgOpacity: (cardBgOpacity) => set({ cardBgOpacity }),
 
       fetchUserData: async (username) => {
         set({ isLoading: true, error: null });
@@ -471,6 +487,10 @@ export const useBuilderStore = create<BuilderStore>()(
           showEmojis: true,
           showBanners: false,
           selectedSectionId: 'header',
+          canvasBgColor: '#0d1117',
+          cardBgColor: '#0d0c1d',
+          cardBorderColor: '#27272a',
+          cardBgOpacity: 0.6,
         }),
 
       loadTemplate: (templateId) => {
@@ -534,6 +554,12 @@ export const useBuilderStore = create<BuilderStore>()(
           fontStyle: template.fontStyle,
           statsCardTheme: themeDefaults.statsTheme,
         });
+
+        // Re-inject user's GitHub data if it's already loaded in the store
+        const currentData = get().githubData;
+        if (currentData) {
+          get().injectGitHubData(currentData);
+        }
       },
 
       addCustomSection: () => {
@@ -592,6 +618,10 @@ export const useBuilderStore = create<BuilderStore>()(
         statsCardTheme: state.statsCardTheme,
         showEmojis: state.showEmojis,
         showBanners: state.showBanners,
+        canvasBgColor: state.canvasBgColor,
+        cardBgColor: state.cardBgColor,
+        cardBorderColor: state.cardBorderColor,
+        cardBgOpacity: state.cardBgOpacity,
         bannerImage: state.bannerImage,
       }),
       onRehydrateStorage: () => (state) => {

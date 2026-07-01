@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import WebGLBackground from '@/components/UI/WebGLBackground';
+import TemplateSelectorModal from '@/components/Preview/TemplateSelectorModal';
 
 const ICON_MAP: Record<string, React.ComponentType<any>> = {
   Cpu,
@@ -31,12 +32,16 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
 export default function TemplatesPage() {
   const router = useRouter();
   const { loadTemplate, selectedTemplate } = useBuilderStore();
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [activePreviewId, setActivePreviewId] = React.useState('');
 
   const handleSelectTemplate = (id: any) => {
-    // 1. Initialize builder sections using that template config
-    // 2. Store selected template in global state
-    loadTemplate(id);
-    // 3. Redirect to username input
+    setActivePreviewId(id);
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmSelect = (id: string) => {
+    loadTemplate(id as any);
     router.push('/generate');
   };
 
@@ -169,6 +174,13 @@ export default function TemplatesPage() {
       <footer className="w-full py-8 text-center text-xs text-zinc-550 border-t border-white/5 bg-[#15121b]/80 relative z-20">
         <p>Choose your starting structure. ReadMeStudio will inject real GitHub data into this template layout.</p>
       </footer>
+
+      {/* Template Selector/Preview Modal */}
+      <TemplateSelectorModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSelect={handleConfirmSelect} 
+      />
     </div>
   );
 }

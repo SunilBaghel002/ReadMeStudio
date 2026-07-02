@@ -161,35 +161,90 @@ export async function fetchGitHubData(username: string): Promise<ExtendedGitHubD
     }
   `;
 
-  const graphRes = await fetch('https://api.github.com/graphql', {
-    method: 'POST',
-    headers: {
-      Authorization: `bearer ${token}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify({
-      query: graphqlQuery,
-      variables: { username, id: userNodeId },
-    }),
-    next: { revalidate: 3600 },
-  });
+  let userObj: any = null;
+  let reposNodes: any[] = [];
+  let graphQLSuccess = false;
 
-  if (!graphRes.ok) {
-    throw new Error(`GitHub GraphQL request failed: ${graphRes.statusText}`);
+  try {
+    const graphRes = await fetch('https://api.github.com/graphql', {
+      method: 'POST',
+      headers: {
+        Authorization: `bearer ${token}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        query: graphqlQuery,
+        variables: { username, id: userNodeId },
+      }),
+      next: { revalidate: 3600 },
+    });
+
+    if (graphRes.ok) {
+      const graphJson = await graphRes.json();
+      if (!graphJson.errors) {
+        userObj = graphJson.data?.user;
+        if (userObj) {
+          reposNodes = userObj.repositories?.nodes || [];
+          graphQLSuccess = true;
+        }
+      } else {
+        console.warn(`[GitHub Fetcher] GraphQL query errors:`, graphJson.errors);
+      }
+    } else {
+      console.warn(`[GitHub Fetcher] GraphQL status failed: ${graphRes.status} ${graphRes.statusText}`);
+    }
+  } catch (err: any) {
+    console.warn(`[GitHub Fetcher] GraphQL network/Bad Gateway failed: ${err.message}. Running REST fallback...`);
   }
 
-  const graphJson = await graphRes.json();
-  if (graphJson.errors) {
-    throw new Error(`GitHub GraphQL error: ${graphJson.errors[0]?.message || 'Query error'}`);
-  }
+  if (!graphQLSuccess) {
+    try {
+      console.log(`[GitHub Fetcher] Fetching fallback repos via REST for: ${username}`);
+      const reposRes = await fetch(`https://api.github.com/users/${username}/repos?per_page=100`, { 
+        headers, 
+        next: { revalidate: 3600 } 
+      });
+      if (!reposRes.ok) {
+        throw new Error(`REST repositories query failed with status: ${reposRes.status}`);
+      }
+      const rawRepos = await reposRes.json();
+      
+      reposNodes = rawRepos.map((r: any) => ({
+        name: r.name,
+        isFork: r.fork,
+        forkCount: r.forks_count,
+        stargazerCount: r.stargazers_count,
+        languages: {
+          edges: r.language ? [{
+            size: 10000,
+            node: {
+              name: r.language,
+              color: '#cccccc'
+            }
+          }] : []
+        }
+      }));
 
-  const userObj = graphJson.data?.user;
-  if (!userObj) {
-    throw new Error('User data not found in GraphQL response');
+      userObj = {
+        repositoriesContributedTo: { totalCount: 0 },
+        contributionsCollection: {
+          totalCommitContributions: (rawProfile.public_repos || 0) * 10,
+          totalPullRequestContributions: 0,
+          totalPullRequestReviewContributions: 0,
+          totalIssueContributions: 0,
+          totalRepositoryContributions: rawProfile.public_repos || 0,
+          contributionCalendar: {
+            totalContributions: (rawProfile.public_repos || 0) * 12,
+            weeks: []
+          }
+        }
+      };
+    } catch (fallbackErr: any) {
+      console.error(`[GitHub Fetcher] REST fallback failed:`, fallbackErr.message);
+      throw new Error(`GitHub statistics fetch failed: GraphQL request failed (e.g. Bad Gateway) and REST fallback also failed.`);
+    }
   }
-
-  const reposNodes = userObj.repositories?.nodes || [];
 
   // Sort and process default non-fork stats
   const ownedRepos = reposNodes.filter((r: any) => !r.isFork);

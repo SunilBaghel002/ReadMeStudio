@@ -303,6 +303,51 @@ export default function Inspector() {
                   <option value="right">Right Aligned</option>
                 </select>
               </div>
+
+              <div className="h-px bg-white/5 my-4" />
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-[11px] font-semibold text-zinc-400">Show Profile Cover Banner</span>
+                  <input
+                    type="checkbox"
+                    checked={showBanners}
+                    onChange={(e) => setShowBanners(e.target.checked)}
+                    className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-indigo-500 focus:ring-indigo-500/20 cursor-pointer"
+                  />
+                </div>
+
+                {showBanners && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-zinc-400 mb-1">Cover Image URL</label>
+                      <DebouncedInput
+                        type="text"
+                        value={bannerImage}
+                        onDebounce={(val) => setBannerImage(val)}
+                        className="w-full px-3 py-2 bg-zinc-900 border border-white/5 rounded-lg text-xs text-zinc-200 font-mono focus:outline-none"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      {BANNER_PRESETS.map((preset) => (
+                        <button
+                          key={preset.name}
+                          onClick={() => setBannerImage(preset.url)}
+                          className={cn(
+                            'flex-1 text-[10px] py-1.5 border rounded font-semibold text-center transition-all truncate px-1 cursor-pointer',
+                            bannerImage === preset.url
+                              ? 'border-indigo-500 bg-indigo-500/5 text-indigo-400'
+                              : 'border-white/5 bg-zinc-900 text-zinc-400 hover:text-zinc-250'
+                          )}
+                          title={preset.name}
+                        >
+                          {preset.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           );
         })()}

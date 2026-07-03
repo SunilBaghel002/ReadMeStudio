@@ -107,9 +107,9 @@ export async function fetchGitHubData(username: string): Promise<ExtendedGitHubD
   const rawProfile = await profileRes.json();
   const userNodeId = rawProfile.node_id;
 
-  // 2. Fetch GraphQL data (with Commit History, ContributedTo, PR reviews, and isFork repo flag)
+  // 2. Fetch GraphQL data (with ContributedTo, PR reviews, and isFork repo flag, without heavy nested default branch commits traversal)
   const graphqlQuery = `
-    query($username: String!, $id: ID!) {
+    query($username: String!) {
       user(login: $username) {
         id
         repositoriesContributedTo(contributionTypes: [COMMIT, ISSUE, PULL_REQUEST, PULL_REQUEST_REVIEW]) {
@@ -127,15 +127,6 @@ export async function fetchGitHubData(username: string): Promise<ExtendedGitHubD
                 node {
                   name
                   color
-                }
-              }
-            }
-            defaultBranchRef {
-              target {
-                ... on Commit {
-                  history(author: {id: $id}) {
-                    totalCount
-                  }
                 }
               }
             }
@@ -175,7 +166,7 @@ export async function fetchGitHubData(username: string): Promise<ExtendedGitHubD
       },
       body: JSON.stringify({
         query: graphqlQuery,
-        variables: { username, id: userNodeId },
+        variables: { username: rawProfile.login },
       }),
       next: { revalidate: 3600 },
     });
@@ -229,7 +220,7 @@ export async function fetchGitHubData(username: string): Promise<ExtendedGitHubD
       userObj = {
         repositoriesContributedTo: { totalCount: 0 },
         contributionsCollection: {
-          totalCommitContributions: (rawProfile.public_repos || 0) * 10,
+          totalCommitContributions: 0,
           totalPullRequestContributions: 0,
           totalPullRequestReviewContributions: 0,
           totalIssueContributions: 0,
@@ -268,13 +259,29 @@ export async function fetchGitHubData(username: string): Promise<ExtendedGitHubD
       language: r.languages?.edges?.[0]?.node?.name || null,
     }));
 
-  // Calculate lifetime commits from owned repositories default branch history
-  let lifetimeCommits = 0;
-  for (const repo of ownedRepos) {
-    lifetimeCommits += repo.defaultBranchRef?.target?.history?.totalCount || 0;
+  const lastYearCommits = userObj.contributionsCollection?.totalCommitContributions || 0;
+
+  // Fetch lifetime commits from Commit Search API (fast, handles public commits across all repos)
+  let lifetimeCommits = lastYearCommits;
+  try {
+    console.log(`[GitHub Fetcher] Fetching lifetime commits via Search API for: ${username}`);
+    const commitsSearchRes = await fetch(`https://api.github.com/search/commits?q=author:${rawProfile.login}`, {
+      headers: {
+        ...headers,
+        Accept: 'application/vnd.github.cloak-preview+json',
+      },
+      next: { revalidate: 3600 }
+    });
+    if (commitsSearchRes.ok) {
+      const searchJson = await commitsSearchRes.json();
+      if (searchJson.total_count !== undefined) {
+        lifetimeCommits = searchJson.total_count;
+      }
+    }
+  } catch (searchErr: any) {
+    console.warn(`[GitHub Fetcher] Commit search failed: ${searchErr.message}. Defaulting to calendar contributions.`);
   }
 
-  const lastYearCommits = userObj.contributionsCollection?.totalCommitContributions || 0;
   if (lifetimeCommits < lastYearCommits) {
     lifetimeCommits = lastYearCommits;
   }

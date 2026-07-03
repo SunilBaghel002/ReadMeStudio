@@ -1,35 +1,51 @@
 import { ThemeDefinition, ThemeGenerator } from '@/types/theme.types';
 
-import * as gradientWave from './gradient-wave';
-import * as terminalHacker from './terminal-hacker';
-import * as minimalZen from './minimal-zen';
-import * as neonSynthwave from './neon-synthwave';
-import * as corporatePro from './corporate-pro';
-import * as gamerDev from './gamer-dev';
-import * as darkElegance from './dark-elegance';
-import * as creativePortfolio from './creative-portfolio';
-import * as opensourceHero from './opensource-hero';
-import * as studentLearner from './student-learner';
+// Statically import only the metadata definitions to keep the main bundle lightweight
+import { definition as gradientWaveDef } from './gradient-wave';
+import { definition as terminalHackerDef } from './terminal-hacker';
+import { definition as minimalZenDef } from './minimal-zen';
+import { definition as neonSynthwaveDef } from './neon-synthwave';
+import { definition as corporateProDef } from './corporate-pro';
+import { definition as gamerDevDef } from './gamer-dev';
+import { definition as darkEleganceDef } from './dark-elegance';
+import { definition as creativePortfolioDef } from './creative-portfolio';
+import { definition as opensourceHeroDef } from './opensource-hero';
+import { definition as studentLearnerDef } from './student-learner';
 
 export interface ThemeEntry {
   definition: ThemeDefinition;
   generate: ThemeGenerator;
 }
 
-const THEME_REGISTRY: Record<string, ThemeEntry> = {
-  'gradient-wave': { definition: gradientWave.definition, generate: gradientWave.generate },
-  'terminal-hacker': { definition: terminalHacker.definition, generate: terminalHacker.generate },
-  'minimal-zen': { definition: minimalZen.definition, generate: minimalZen.generate },
-  'neon-synthwave': { definition: neonSynthwave.definition, generate: neonSynthwave.generate },
-  'corporate-pro': { definition: corporatePro.definition, generate: corporatePro.generate },
-  'gamer-dev': { definition: gamerDev.definition, generate: gamerDev.generate },
-  'dark-elegance': { definition: darkElegance.definition, generate: darkElegance.generate },
-  'creative-portfolio': { definition: creativePortfolio.definition, generate: creativePortfolio.generate },
-  'opensource-hero': { definition: opensourceHero.definition, generate: opensourceHero.generate },
-  'student-learner': { definition: studentLearner.definition, generate: studentLearner.generate },
+// Map of theme IDs to their metadata definitions
+export const THEME_DEFINITIONS: Record<string, ThemeDefinition> = {
+  'gradient-wave': gradientWaveDef,
+  'terminal-hacker': terminalHackerDef,
+  'minimal-zen': minimalZenDef,
+  'neon-synthwave': neonSynthwaveDef,
+  'corporate-pro': corporateProDef,
+  'gamer-dev': gamerDevDef,
+  'dark-elegance': darkEleganceDef,
+  'creative-portfolio': creativePortfolioDef,
+  'opensource-hero': opensourceHeroDef,
+  'student-learner': studentLearnerDef,
 };
 
-export const THEME_LIST: ThemeDefinition[] = Object.values(THEME_REGISTRY).map(t => t.definition);
+// Map of theme IDs to lazy-loaded generation code
+const THEME_GENERATORS: Record<string, () => Promise<{ generate: ThemeGenerator }>> = {
+  'gradient-wave': () => import('./gradient-wave'),
+  'terminal-hacker': () => import('./terminal-hacker'),
+  'minimal-zen': () => import('./minimal-zen'),
+  'neon-synthwave': () => import('./neon-synthwave'),
+  'corporate-pro': () => import('./corporate-pro'),
+  'gamer-dev': () => import('./gamer-dev'),
+  'dark-elegance': () => import('./dark-elegance'),
+  'creative-portfolio': () => import('./creative-portfolio'),
+  'opensource-hero': () => import('./opensource-hero'),
+  'student-learner': () => import('./student-learner'),
+};
+
+export const THEME_LIST: ThemeDefinition[] = Object.values(THEME_DEFINITIONS);
 
 export const THEME_CATEGORIES = {
   professional: THEME_LIST.filter(t => t.category === 'professional'),
@@ -45,20 +61,26 @@ export const CATEGORY_LABELS: Record<string, { label: string; description: strin
   fun: { label: 'Fun & Expressive', description: 'Playful, personality-driven profiles' },
 };
 
-export function getTheme(id: string): ThemeEntry | undefined {
-  return THEME_REGISTRY[id];
-}
-
 export function getThemeDefinition(id: string): ThemeDefinition | undefined {
-  return THEME_REGISTRY[id]?.definition;
+  return THEME_DEFINITIONS[id];
 }
 
-export function generateThemeMarkdown(themeId: string, input: Parameters<ThemeGenerator>[0]): string {
-  const theme = THEME_REGISTRY[themeId];
-  if (!theme) {
+// In-memory cache for loaded theme generators to make subsequent calls instantaneous
+const generatorCache: Record<string, ThemeGenerator> = {};
+
+export async function generateThemeMarkdown(themeId: string, input: Parameters<ThemeGenerator>[0]): Promise<string> {
+  if (generatorCache[themeId]) {
+    return generatorCache[themeId](input);
+  }
+
+  const loader = THEME_GENERATORS[themeId];
+  if (!loader) {
     return `<!-- Theme "${themeId}" not found. Please select a valid theme. -->`;
   }
-  return theme.generate(input);
+
+  const module = await loader();
+  generatorCache[themeId] = module.generate;
+  return module.generate(input);
 }
 
 // Map old template IDs to new theme IDs for backward compatibility
@@ -74,5 +96,3 @@ export const LEGACY_TEMPLATE_MAP: Record<string, string> = {
 export function resolveLegacyTemplateId(id: string): string {
   return LEGACY_TEMPLATE_MAP[id] || id;
 }
-
-export default THEME_REGISTRY;

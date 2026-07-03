@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useDeferredValue } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -173,14 +173,21 @@ export default function PreviewPanel() {
   const getThemeMarkdown = useBuilderStore((state) => state.getThemeMarkdown);
 
   const [markdown, setMarkdown] = useState('');
+  const deferredMarkdown = useDeferredValue(markdown);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const md = getThemeMarkdown();
-      setMarkdown(md);
+    let active = true;
+    const timer = setTimeout(async () => {
+      const md = await getThemeMarkdown();
+      if (active) {
+        setMarkdown(md);
+      }
     }, 300);
 
-    return () => clearTimeout(timer);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [sections, username, showEmojis, showBanners, bannerImage, accentColor, statsCardTheme, readmeStyle, selectedThemeId, themeCustomization, getThemeMarkdown]);
 
   const handleCopy = () => {
@@ -342,7 +349,7 @@ export default function PreviewPanel() {
                 </div>
 
                 <MarkdownRenderer
-                  markdown={markdown}
+                  markdown={deferredMarkdown}
                   canvasBgColor={canvasBgColor}
                   username={username}
                   profile={profile}
@@ -414,7 +421,7 @@ export default function PreviewPanel() {
               <div className="w-8" />
             </div>
             <pre className="p-6 text-left overflow-x-auto text-xs font-mono leading-relaxed bg-[#050508] max-h-[600px] overflow-y-auto">
-              <code>{highlightMarkdownCode(markdown)}</code>
+              <code>{highlightMarkdownCode(deferredMarkdown)}</code>
             </pre>
           </div>
         )}

@@ -214,38 +214,50 @@ export default function TemplateSelectorModal({ isOpen, onClose, onSelect }: Tem
   const currentTheme = THEME_LIST.find(t => t.id === selectedId) || THEME_LIST[0];
 
   useEffect(() => {
-    // Generate preview markdown using the selected theme's generator
-    const hostUrl = typeof window !== 'undefined' ? window.location.origin : 'https://readme-studio.vercel.app';
+    let active = true;
+    
+    async function loadMarkdown() {
+      // Generate preview markdown using the selected theme's generator
+      const hostUrl = typeof window !== 'undefined' ? window.location.origin : 'https://readme-studio.vercel.app';
 
-    // Gather skills from existing sections
-    const skillsSection = sections.find(s => s.type === 'skills');
-    const skills = skillsSection?.config?.skills?.selectedSkills || ['JavaScript', 'TypeScript', 'React', 'Next.js', 'Node.js', 'TailwindCSS', 'Git', 'Docker'];
+      // Gather skills from existing sections
+      const skillsSection = sections.find(s => s.type === 'skills');
+      const skills = skillsSection?.config?.skills?.selectedSkills || ['JavaScript', 'TypeScript', 'React', 'Next.js', 'Node.js', 'TailwindCSS', 'Git', 'Docker'];
 
-    // Gather repos
-    const selectedRepos = repos.slice(0, 3).map(r => r.name);
+      // Gather repos
+      const selectedRepos = repos.slice(0, 3).map(r => r.name);
 
-    const md = generateThemeMarkdown(selectedId, {
-      username,
-      name: profile.name || username,
-      bio: profile.bio || 'Full Stack Web Developer',
-      avatarUrl: `https://github.com/${username}.png`,
-      skills,
-      selectedRepos,
-      socials: {
-        github: username,
-        linkedin: '',
-        twitter: (profile as any).twitterUsername || '',
-        portfolio: '',
-        email: '',
-      },
-      customization: currentTheme.defaultConfig,
-      currentProject: 'ReadMeStudio',
-      learning: 'Next.js 15, Framer Motion, and Rust',
-      collab: 'open source projects',
-      baseUrl: hostUrl,
-    });
+      const md = await generateThemeMarkdown(selectedId, {
+        username,
+        name: profile.name || username,
+        bio: profile.bio || 'Full Stack Web Developer',
+        avatarUrl: `https://github.com/${username}.png`,
+        skills,
+        selectedRepos,
+        socials: {
+          github: username,
+          linkedin: '',
+          twitter: (profile as any).twitterUsername || '',
+          portfolio: '',
+          email: '',
+        },
+        customization: currentTheme.defaultConfig,
+        currentProject: 'ReadMeStudio',
+        learning: 'Next.js 15, Framer Motion, and Rust',
+        collab: 'open source projects',
+        baseUrl: hostUrl,
+      });
 
-    setPreviewMarkdown(md);
+      if (active) {
+        setPreviewMarkdown(md);
+      }
+    }
+
+    loadMarkdown();
+
+    return () => {
+      active = false;
+    };
   }, [selectedId, username, profile, currentTheme, repos, sections]);
 
   if (!isOpen) return null;

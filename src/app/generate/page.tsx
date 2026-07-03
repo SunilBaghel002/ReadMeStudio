@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useBuilderStore } from '@/store/useBuilderStore';
+import { useShallow } from 'zustand/react/shallow';
 import { FaGithub } from 'react-icons/fa';
 import {
   ArrowRight,
@@ -17,7 +18,15 @@ import WebGLBackground from '@/components/UI/WebGLBackground';
 export default function OnboardingPage() {
   const router = useRouter();
   const [usernameInput, setUsernameInput] = useState('');
-  const { fetchUserData, isLoading, error, selectedTemplate, selectedThemeId, resetStore, loadTheme } = useBuilderStore();
+  const { fetchUserData, isLoading, error, selectedTemplate, selectedThemeId, resetStore, loadTheme } = useBuilderStore(useShallow(state => ({
+    fetchUserData: state.fetchUserData,
+    isLoading: state.isLoading,
+    error: state.error,
+    selectedTemplate: state.selectedTemplate,
+    selectedThemeId: state.selectedThemeId,
+    resetStore: state.resetStore,
+    loadTheme: state.loadTheme,
+  })));
 
   // Redirect to templates page if no template was selected
   useEffect(() => {

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useBuilderStore } from '@/store/useBuilderStore';
+import { useShallow } from 'zustand/react/shallow';
 import { THEME_LIST, THEME_CATEGORIES, CATEGORY_LABELS } from '@/themes';
 import { 
   Waves,
@@ -49,7 +50,10 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
 
 export default function TemplatesPage() {
   const router = useRouter();
-  const { loadTheme, selectedThemeId } = useBuilderStore();
+  const { loadTheme, selectedThemeId } = useBuilderStore(useShallow(state => ({
+    loadTheme: state.loadTheme,
+    selectedThemeId: state.selectedThemeId
+  })));
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [activePreviewId, setActivePreviewId] = React.useState('');
 

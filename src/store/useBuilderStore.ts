@@ -16,7 +16,7 @@ import {
 } from '@/types/github.types';
 import { TEMPLATES } from '@/config/templates.config';
 import { ThemeCustomization } from '@/types/theme.types';
-import { getTheme, resolveLegacyTemplateId, generateThemeMarkdown } from '@/themes';
+import { getThemeDefinition, resolveLegacyTemplateId, generateThemeMarkdown } from '@/themes';
 
 interface BuilderStore {
   username: string;
@@ -81,7 +81,7 @@ interface BuilderStore {
   loadTheme: (themeId: string) => void;
   setSelectedThemeId: (id: string) => void;
   setThemeCustomization: (customization: Partial<ThemeCustomization>) => void;
-  getThemeMarkdown: () => string;
+  getThemeMarkdown: () => Promise<string>;
   addCustomSection: () => void;
   deleteSection: (id: string) => void;
   updateSectionTitle: (id: string, title: string) => void;
@@ -627,10 +627,9 @@ export const useBuilderStore = create<BuilderStore>()(
       // NEW THEME SYSTEM
       // ═══════════════════════════════════════
       loadTheme: (themeId: string) => {
-        const theme = getTheme(themeId);
-        if (!theme) return;
+        const def = getThemeDefinition(themeId);
+        if (!def) return;
 
-        const def = theme.definition;
         set({
           selectedTemplate: themeId,
           selectedThemeId: themeId,
@@ -658,7 +657,7 @@ export const useBuilderStore = create<BuilderStore>()(
         }));
       },
 
-      getThemeMarkdown: () => {
+      getThemeMarkdown: async () => {
         const state = get();
         if (!state.username) return '<!-- Enter your GitHub username to generate a preview -->';
 
@@ -686,7 +685,7 @@ export const useBuilderStore = create<BuilderStore>()(
         const workingOnSection = state.sections.find(s => s.type === 'working-on');
         const workingOn = workingOnSection?.config?.['working-on'];
 
-        return generateThemeMarkdown(state.selectedThemeId, {
+        return await generateThemeMarkdown(state.selectedThemeId, {
           username: state.username,
           name: state.profile?.name || state.username,
           bio: state.profile?.bio || '',

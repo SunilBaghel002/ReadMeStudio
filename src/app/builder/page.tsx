@@ -3,11 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useBuilderStore } from '@/store/useBuilderStore';
-import SectionList from '@/components/Builder/SectionList';
-import PreviewPanel from '@/components/Preview/PreviewPanel';
-import Inspector from '@/components/Builder/Inspector';
-import ExportModal from '@/components/Preview/ExportModal';
-import TemplateSelectorModal from '@/components/Preview/TemplateSelectorModal';
+import { useShallow } from 'zustand/react/shallow';
+import dynamic from 'next/dynamic';
+
+const SectionList = dynamic(() => import('@/components/Builder/SectionList'), { ssr: false });
+const PreviewPanel = dynamic(() => import('@/components/Preview/PreviewPanel'), { ssr: false });
+const Inspector = dynamic(() => import('@/components/Builder/Inspector'), { ssr: false });
+const ExportModal = dynamic(() => import('@/components/Preview/ExportModal'), { ssr: false });
+const TemplateSelectorModal = dynamic(() => import('@/components/Preview/TemplateSelectorModal'), { ssr: false });
 import Link from 'next/link';
 import { 
   Layout, 
@@ -40,10 +43,27 @@ export default function BuilderPage() {
     selectedThemeId,
     themeCustomization,
     getThemeMarkdown,
-  } = useBuilderStore();
+  } = useBuilderStore(useShallow(state => ({
+    username: state.username,
+    githubData: state.githubData,
+    profile: state.profile,
+    resetStore: state.resetStore,
+    sections: state.sections,
+    showEmojis: state.showEmojis,
+    showBanners: state.showBanners,
+    bannerImage: state.bannerImage,
+    accentColor: state.accentColor,
+    statsCardTheme: state.statsCardTheme,
+    readmeStyle: state.readmeStyle,
+    hasHydrated: state.hasHydrated,
+    selectedThemeId: state.selectedThemeId,
+    themeCustomization: state.themeCustomization,
+    getThemeMarkdown: state.getThemeMarkdown,
+  })));
 
   const [mobileTab, setMobileTab] = useState<'sections' | 'preview' | 'customize'>('preview');
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [exportMarkdown, setExportMarkdown] = useState('');
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -55,9 +75,15 @@ export default function BuilderPage() {
   }, [hasHydrated, githubData, username, router]);
 
   // Compute markdown output using the theme-based generator
-  const getLatestMarkdown = () => {
+  const getLatestMarkdown = async () => {
     if (!username) return '';
-    return getThemeMarkdown();
+    return await getThemeMarkdown();
+  };
+
+  const handleOpenExport = async () => {
+    const md = await getLatestMarkdown();
+    setExportMarkdown(md);
+    setIsExportOpen(true);
   };
 
   const handleSwitchProfile = () => {
@@ -65,8 +91,8 @@ export default function BuilderPage() {
     router.push('/generate');
   };
 
-  const handleCopy = () => {
-    const md = getLatestMarkdown();
+  const handleCopy = async () => {
+    const md = await getLatestMarkdown();
     navigator.clipboard.writeText(md);
     setCopied(true);
     confetti({
@@ -78,8 +104,8 @@ export default function BuilderPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDownload = () => {
-    const md = getLatestMarkdown();
+  const handleDownload = async () => {
+    const md = await getLatestMarkdown();
     const blob = new Blob([md], { type: 'text/markdown;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -138,7 +164,7 @@ export default function BuilderPage() {
             Switch User
           </button>
           <button
-            onClick={() => setIsExportOpen(true)}
+            onClick={handleOpenExport}
             className="px-4 py-2 rounded-lg border border-white/5 bg-transparent hover:bg-zinc-800/20 text-[#ccc3d8] hover:text-white font-semibold text-xs transition-colors hidden md:block cursor-pointer"
           >
             Preview Markdown
@@ -234,7 +260,7 @@ export default function BuilderPage() {
       <ExportModal 
         isOpen={isExportOpen} 
         onClose={() => setIsExportOpen(false)} 
-        markdown={isExportOpen ? getLatestMarkdown() : ''}
+        markdown={exportMarkdown}
       />
 
       {/* Template selection and preview modal */}

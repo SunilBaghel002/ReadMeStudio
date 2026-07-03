@@ -413,7 +413,7 @@ export const StreakCardPreview = ({ streak }: { streak: any }) => {
             <span key={m.key} className="flex items-center gap-1.5 inline-block">
               {showFireIcon && (m.key === 'current' ? <span className="text-base">{flameEmoji}</span> : <m.icon className="h-3.5 w-3.5" style={{ color: m.color }} />)}
               <span className="flex flex-col">
-                <span className="text-xs font-black font-mono" style={{ color: m.color }}>{m.value.split(' ')[0]}</span>
+                <span className="text-xs font-black font-mono" style={{ color: m.color }}>{String(m.value).split(' ')[0]}</span>
                 {showLabels && <span className="text-[8px] text-zinc-500 font-mono">{m.label.replace(' Streak', '').replace(' Contributions', '')}</span>}
               </span>
             </span>

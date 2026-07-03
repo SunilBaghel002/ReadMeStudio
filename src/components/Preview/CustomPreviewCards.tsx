@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { LanguageStat, GitHubRepo } from '@/types/github.types';
 import { useBuilderStore } from '@/store/useBuilderStore';
+import { useShallow } from 'zustand/react/shallow';
 import { THEME_PALETTES } from '@/lib/theme';
 import { calculateRank } from '@/lib/githubFetcher';
 import { cn } from '@/lib/utils';
@@ -79,7 +80,14 @@ function resolvePreviewStyles(config: any, themePalette: any, globalBgColor: str
 
 // --- STATS CARD PREVIEW ---
 export const StatsCardPreview = ({ stats, username }: { stats: any; username: string }) => {
-  const { cardBgColor, cardBorderColor, cardBgOpacity, sections, profile } = useBuilderStore();
+  const { cardBgColor, cardBorderColor, cardBgOpacity, sections, profile, githubData } = useBuilderStore(useShallow(state => ({
+    cardBgColor: state.cardBgColor,
+    cardBorderColor: state.cardBorderColor,
+    cardBgOpacity: state.cardBgOpacity,
+    sections: state.sections,
+    profile: state.profile,
+    githubData: state.githubData
+  })));
   const statsSection = sections.find((s) => s.type === 'stats');
   const config = (statsSection?.config?.stats || {}) as any;
 
@@ -97,7 +105,7 @@ export const StatsCardPreview = ({ stats, username }: { stats: any; username: st
   const hideRank = !!config.hideRank;
 
   // Filter repositories based on fork configuration
-  const reposList = stats.rawReposData || [];
+  const reposList = (githubData as any)?.rawReposData || stats.rawReposData || [];
   const filteredRepos = config.includeForks ? reposList : reposList.filter((r: any) => !r.isFork);
 
   // Recalculate stars and count

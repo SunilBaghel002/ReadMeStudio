@@ -222,7 +222,9 @@ export interface BuilderSection {
   config: SectionConfig;
 }
 
-export type AppTheme = 'minimal' | 'dark' | 'cyberpunk' | 'gradient' | 'devops' | 'pastel';
+export type AppTheme = 'minimal' | 'dark' | 'cyberpunk' | 'gradient' | 'devops' | 'pastel'
+  | 'gradient-wave' | 'terminal-hacker' | 'minimal-zen' | 'neon-synthwave' | 'corporate-pro'
+  | 'gamer-dev' | 'dark-elegance' | 'creative-portfolio' | 'opensource-hero' | 'student-learner';
 export type ReadmeStyle = 'minimal' | 'bold' | 'creative' | 'professional' | 'hacker' | 'elegant';
 export type AccentColor = string;
 export type FontStyle = 'sans' | 'serif' | 'mono' | 'display';

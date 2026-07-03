@@ -5,22 +5,23 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { useBuilderStore, DEFAULT_SECTIONS } from '@/store/useBuilderStore';
-import { TEMPLATES } from '@/config/templates.config';
-import { BuilderSection, SectionType } from '@/types/github.types';
-import { generateMarkdown } from '@/lib/markdown';
+import { THEME_LIST, THEME_CATEGORIES, CATEGORY_LABELS, generateThemeMarkdown } from '@/themes';
+import { ThemeDefinition } from '@/types/theme.types';
 import { cn } from '@/lib/utils';
 import { 
   X, 
   Sparkles, 
-  Cpu, 
-  Layout, 
-  GraduationCap, 
-  Layers, 
-  CloudLightning,
-  Check, 
-  Eye,
-  Sliders,
-  ArrowRight
+  Check,
+  Waves,
+  Terminal,
+  Minus,
+  Zap,
+  Briefcase,
+  Gamepad2,
+  Crown,
+  Palette,
+  GitPullRequest,
+  GraduationCap,
 } from 'lucide-react';
 import {
   StatsCardPreview,
@@ -29,6 +30,98 @@ import {
   RepositoryPinPreview
 } from './CustomPreviewCards';
 
+// Memoized ReactMarkdown component for the selector modal preview to prevent lag on hover/scroll
+const ThemePreviewRenderer = React.memo(({
+  markdown,
+  username,
+  profile,
+  repos,
+  langs,
+  stats,
+}: {
+  markdown: string;
+  username: string;
+  profile: any;
+  repos: any;
+  langs: any;
+  stats: any;
+}) => {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeRaw]}
+      components={{
+        h1: ({ ...props }) => <h1 className="text-2xl font-extrabold pb-2 mb-4 border-b border-zinc-850 text-white tracking-tight" {...props} />,
+        h2: ({ ...props }) => <h2 className="text-xl font-bold pb-2 mt-6 mb-3 border-b border-zinc-850 text-white tracking-tight" {...props} />,
+        h3: ({ ...props }) => <h3 className="text-base font-semibold mt-4 mb-2 text-zinc-200" {...props} />,
+        p: ({ ...props }) => <p className="mb-3 text-zinc-300 text-xs md:text-sm leading-relaxed" {...props} />,
+        ul: ({ ...props }) => <ul className="list-disc pl-5 mb-3 space-y-1 text-zinc-350 text-xs md:text-sm" {...props} />,
+        ol: ({ ...props }) => <ol className="list-decimal pl-5 mb-3 space-y-1 text-zinc-350 text-xs md:text-sm" {...props} />,
+        li: ({ ...props }) => <li className="pl-0.5" {...props} />,
+        code: ({ className, children, ...props }) => {
+          const match = /language-(\w+)/.exec(className || '');
+          return !match ? (
+            <code className="bg-zinc-850 px-1.5 py-0.5 rounded text-pink-400 text-xs font-mono" {...props}>
+              {children}
+            </code>
+          ) : (
+            <pre className="bg-zinc-950 p-3 rounded-lg border border-white/5 overflow-x-auto text-[10px] font-mono text-zinc-300">
+              <code>{children}</code>
+            </pre>
+          );
+        },
+        blockquote: ({ ...props }) => (
+          <blockquote className="border-l-4 border-zinc-700 pl-4 py-1 italic text-zinc-450 my-3" {...props} />
+        ),
+        table: ({ ...props }) => (
+          <div className="overflow-x-auto my-4 border border-zinc-850 rounded-lg">
+            <table className="min-w-full divide-y divide-zinc-850 text-[10px] text-left" {...props} />
+          </div>
+        ),
+        th: ({ ...props }) => <th className="px-3 py-2 bg-zinc-900 text-zinc-300 font-bold uppercase" {...props} />,
+        td: ({ ...props }) => <td className="px-3 py-2 bg-zinc-900/30 text-zinc-400 border-t border-zinc-850" {...props} />,
+        a: ({ ...props }) => <a className="text-blue-400 hover:underline cursor-pointer" target="_blank" rel="noopener noreferrer" {...props} />,
+        hr: ({ ...props }) => <hr className="border-zinc-800 my-4" {...props} />,
+        details: ({ children, ...props }) => <details className="mb-3 border border-zinc-800 rounded-lg p-2" {...props}>{children}</details>,
+        summary: ({ children, ...props }) => <summary className="cursor-pointer text-xs font-semibold text-zinc-300" {...props}>{children}</summary>,
+        img: ({ src, alt, ...props }) => {
+          if (!src || typeof src !== 'string') {
+            return (
+              <img className="max-w-full rounded-md inline-block my-1.5" src={src as any} alt={alt} {...props} />
+            );
+          }
+          
+          const isStatsDomain = src.includes('github-readme-stats.vercel.app') || src.includes('github-readme-stats.shion.dev');
+          
+          if (src.includes('/api/github/stats') || (isStatsDomain && src.includes('/api') && !src.includes('top-langs') && !src.includes('/pin/'))) {
+            return <StatsCardPreview stats={stats} username={username} />;
+          }
+
+          if (src.includes('/api/github/languages') || (isStatsDomain && src.includes('/api/top-langs'))) {
+            return <LanguagesCardPreview languages={langs} />;
+          }
+
+          if (src.includes('github-profile-trophy.vercel.app') || src.includes('/api/github/trophies')) {
+            return <TrophiesCardPreview stats={stats} profile={profile} />;
+          }
+
+          if (isStatsDomain && src.includes('/api/pin/')) {
+            const repoName = new URLSearchParams(src.split('?')[1] || '').get('repo') || '';
+            return <RepositoryPinPreview repoName={repoName} topRepos={repos} />;
+          }
+
+          return (
+            <img className="max-w-full rounded-md inline-block my-1.5" src={src} alt={alt} {...props} />
+          );
+        }
+      }}
+    >
+      {markdown}
+    </ReactMarkdown>
+  );
+});
+ThemePreviewRenderer.displayName = 'ThemePreviewRenderer';
+
 interface TemplateSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -36,13 +129,19 @@ interface TemplateSelectorModalProps {
 }
 
 const ICON_MAP: Record<string, React.ComponentType<any>> = {
-  Cpu,
-  Layout,
-  Sparkles,
+  Waves,
+  Terminal,
+  Minus,
+  Zap,
+  Briefcase,
+  Gamepad2,
+  Crown,
+  Palette,
+  GitPullRequest,
   GraduationCap,
-  Layers,
-  CloudLightning,
 };
+
+const CATEGORY_ORDER = ['professional', 'creative', 'technical', 'fun'] as const;
 
 const MOCK_GITHUB_DATA = {
   profile: {
@@ -60,6 +159,8 @@ const MOCK_GITHUB_DATA = {
     publicGists: 5,
     twitterUsername: 'sunilbaghel02',
     createdAt: '2021-04-12T00:00:00Z',
+    totalStars: 464,
+    totalForks: 89,
   },
   stats: {
     totalStars: 464,
@@ -95,11 +196,12 @@ export default function TemplateSelectorModal({ isOpen, onClose, onSelect }: Tem
     topRepos: storeRepos,
     languages: storeLangs,
     stats: storeStats,
-    loadTemplate,
-    selectedTemplate: activeTemplateId 
+    loadTheme,
+    selectedThemeId: activeThemeId,
+    sections,
   } = useBuilderStore();
 
-  const [selectedTmplId, setSelectedTmplId] = useState<string>(activeTemplateId || TEMPLATES[0].id);
+  const [selectedId, setSelectedId] = useState<string>(activeThemeId || THEME_LIST[0].id);
   const [previewMarkdown, setPreviewMarkdown] = useState<string>('');
 
   // Resolve user details (real or mock)
@@ -109,63 +211,66 @@ export default function TemplateSelectorModal({ isOpen, onClose, onSelect }: Tem
   const langs = storeLangs.length > 0 ? storeLangs : MOCK_GITHUB_DATA.languages;
   const stats = storeStats || MOCK_GITHUB_DATA.stats;
 
-  const currentTemplate = TEMPLATES.find(t => t.id === selectedTmplId) || TEMPLATES[0];
+  const currentTheme = THEME_LIST.find(t => t.id === selectedId) || THEME_LIST[0];
 
   useEffect(() => {
-    // Construct preview markdown dynamically for the selected template configuration
-    const defaultSectionsMap = DEFAULT_SECTIONS(username, profile.name || username, profile.bio || '').reduce((acc, sec) => {
-      acc[sec.type] = sec;
-      return acc;
-    }, {} as Record<SectionType, BuilderSection>);
+    // Generate preview markdown using the selected theme's generator
+    const hostUrl = typeof window !== 'undefined' ? window.location.origin : 'https://readme-studio.vercel.app';
 
-    const sections = currentTemplate.enabledSections.map((type) => {
-      const defaultSec = defaultSectionsMap[type];
-      const configOverride = currentTemplate.sectionsConfig[type] || {};
-      return {
-        ...defaultSec,
-        isVisible: true,
-        config: {
-          ...defaultSec.config,
-          ...configOverride,
-        },
-      };
-    });
+    // Gather skills from existing sections
+    const skillsSection = sections.find(s => s.type === 'skills');
+    const skills = skillsSection?.config?.skills?.selectedSkills || ['JavaScript', 'TypeScript', 'React', 'Next.js', 'Node.js', 'TailwindCSS', 'Git', 'Docker'];
 
-    const md = generateMarkdown(sections, username, {
-      showEmojis: true,
-      showBanners: currentTemplate.id !== 'minimal',
-      bannerImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80',
-      accentColor: currentTemplate.accentColor,
-      statsCardTheme: currentTemplate.theme === 'devops' ? 'tokyonight' : (currentTemplate.theme === 'cyberpunk' ? 'cyberpunk' : 'github_dark'),
-      readmeStyle: currentTemplate.readmeStyle,
+    // Gather repos
+    const selectedRepos = repos.slice(0, 3).map(r => r.name);
+
+    const md = generateThemeMarkdown(selectedId, {
+      username,
+      name: profile.name || username,
+      bio: profile.bio || 'Full Stack Web Developer',
+      avatarUrl: `https://github.com/${username}.png`,
+      skills,
+      selectedRepos,
+      socials: {
+        github: username,
+        linkedin: '',
+        twitter: (profile as any).twitterUsername || '',
+        portfolio: '',
+        email: '',
+      },
+      customization: currentTheme.defaultConfig,
+      currentProject: 'ReadMeStudio',
+      learning: 'Next.js 15, Framer Motion, and Rust',
+      collab: 'open source projects',
+      baseUrl: hostUrl,
     });
 
     setPreviewMarkdown(md);
-  }, [selectedTmplId, username, profile, currentTemplate]);
+  }, [selectedId, username, profile, currentTheme, repos, sections]);
 
   if (!isOpen) return null;
 
   const handleApply = () => {
     if (onSelect) {
-      onSelect(selectedTmplId);
+      onSelect(selectedId);
     } else {
-      loadTemplate(selectedTmplId as any);
+      loadTheme(selectedId);
     }
     onClose();
   };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-      <div className="bg-[#15121b] border border-white/5 w-full max-w-6xl h-[85vh] rounded-2xl flex flex-col overflow-hidden shadow-2xl relative">
+      <div className="bg-[#15121b] border border-white/5 w-full max-w-7xl h-[90vh] rounded-2xl flex flex-col overflow-hidden shadow-2xl relative">
         
         {/* Modal Header */}
         <div className="flex justify-between items-center p-4 md:px-6 border-b border-white/5 bg-[#181520] shrink-0">
           <div>
             <h3 className="text-sm font-extrabold text-white flex items-center gap-2 uppercase tracking-wider font-mono">
               <Sparkles className="h-4 w-4 text-indigo-400" />
-              <span>Select Structural Template</span>
+              <span>Choose Your Theme</span>
             </h3>
-            <p className="text-[10px] text-zinc-450 mt-0.5">Preview template layouts using {storeUsername ? 'your' : 'simulated'} stats before choosing.</p>
+            <p className="text-[10px] text-zinc-450 mt-0.5">Each theme produces a completely different README. Preview using {storeUsername ? 'your' : 'simulated'} data.</p>
           </div>
           <button 
             onClick={onClose}
@@ -175,148 +280,100 @@ export default function TemplateSelectorModal({ isOpen, onClose, onSelect }: Tem
           </button>
         </div>
 
-        {/* Modal Content Split Grid */}
+        {/* Modal Content */}
         <div className="flex-1 flex overflow-hidden min-h-0">
           
-          {/* Left Column: Template Selection List */}
-          <div className="w-[320px] shrink-0 h-full border-r border-white/5 overflow-y-auto p-4 space-y-3 bg-[#110e16]/30">
-            {TEMPLATES.map((tmpl) => {
-              const Icon = ICON_MAP[tmpl.icon] || Layout;
-              const isSelected = selectedTmplId === tmpl.id;
-              const isActive = activeTemplateId === tmpl.id;
+          {/* Left Column: Theme List by Category */}
+          <div className="w-[340px] shrink-0 h-full border-r border-white/5 overflow-y-auto p-4 space-y-5 bg-[#110e16]/30">
+            {CATEGORY_ORDER.map(category => {
+              const themes = THEME_CATEGORIES[category];
+              const catInfo = CATEGORY_LABELS[category];
+              if (themes.length === 0) return null;
 
               return (
-                <div
-                  key={tmpl.id}
-                  onClick={() => setSelectedTmplId(tmpl.id)}
-                  className={cn(
-                    "p-4 rounded-xl border text-left flex flex-col justify-between transition-all duration-200 cursor-pointer relative",
-                    isSelected 
-                      ? "bg-[#7c3aed]/10 border-[#7c3aed]/40 shadow-lg shadow-indigo-500/5 text-white" 
-                      : "bg-[#15121b]/40 border-white/5 text-zinc-450 hover:bg-white/5 hover:border-white/10"
-                  )}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className={cn(
-                        "h-8 w-8 rounded-lg flex items-center justify-center border transition-colors",
-                        isSelected ? "border-[#7c3aed]/30 bg-[#7c3aed]/10" : "border-white/5 bg-zinc-900"
-                      )}>
-                        <Icon className="h-4 w-4 text-indigo-400" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                          <span>{tmpl.title}</span>
-                          {isActive && (
-                            <span className="px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-[#a5b4fc] text-[8px] font-mono tracking-normal font-semibold">Active</span>
-                          )}
-                        </h4>
-                        <span className="text-[9px] text-zinc-500 font-mono capitalize">{tmpl.readmeStyle} style</span>
-                      </div>
-                    </div>
+                <div key={category}>
+                  <div className="mb-2.5">
+                    <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{catInfo.label}</h4>
+                    <p className="text-[8px] text-zinc-600">{catInfo.description}</p>
                   </div>
+                  <div className="space-y-2">
+                    {themes.map((theme) => {
+                      const Icon = ICON_MAP[theme.icon] || Sparkles;
+                      const isSelected = selectedId === theme.id;
+                      const isActive = activeThemeId === theme.id;
 
-                  <p className="text-[10px] text-zinc-450 mt-2.5 line-clamp-2 leading-relaxed">
-                    {tmpl.description}
-                  </p>
-
-                  <div className="flex flex-wrap gap-1 mt-3.5 pt-2.5 border-t border-white/5">
-                    {tmpl.enabledSections.slice(0, 3).map((sec) => (
-                      <span 
-                        key={sec} 
-                        className="text-[7.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-white/5 border border-white/5 rounded-md text-zinc-550"
-                      >
-                        {sec}
-                      </span>
-                    ))}
-                    {tmpl.enabledSections.length > 3 && (
-                      <span className="text-[7.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-white/5 border border-white/5 rounded-md text-zinc-550">
-                        +{tmpl.enabledSections.length - 3}
-                      </span>
-                    )}
+                      return (
+                        <div
+                          key={theme.id}
+                          onClick={() => setSelectedId(theme.id)}
+                          className={cn(
+                            "p-3.5 rounded-xl border text-left flex flex-col transition-all duration-200 cursor-pointer relative",
+                            isSelected 
+                              ? "bg-[#7c3aed]/10 border-[#7c3aed]/40 shadow-lg shadow-indigo-500/5 text-white" 
+                              : "bg-[#15121b]/40 border-white/5 text-zinc-450 hover:bg-white/5 hover:border-white/10"
+                          )}
+                        >
+                          <div className="flex items-center justify-between mb-1.5">
+                            <div className="flex items-center gap-2">
+                              {/* Color swatches */}
+                              <div className="flex gap-0.5">
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme.previewColors.primary }} />
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme.previewColors.secondary }} />
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme.previewColors.accent }} />
+                              </div>
+                              <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                                <span>{theme.name}</span>
+                                {isActive && (
+                                  <span className="px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-[#a5b4fc] text-[8px] font-mono tracking-normal font-semibold">Active</span>
+                                )}
+                              </h4>
+                            </div>
+                            <Icon className="h-3.5 w-3.5 text-zinc-500" />
+                          </div>
+                          <p className="text-[9px] text-zinc-500 line-clamp-2 leading-relaxed">
+                            {theme.description}
+                          </p>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Right Column: Compiled Preview Canvas */}
+          {/* Right Column: Full Theme Preview */}
           <div className="flex-1 h-full bg-[#0d0b11] overflow-y-auto p-6 md:p-8 flex flex-col items-center">
+            {/* Theme info bar */}
+            <div className="w-full max-w-2xl mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex gap-1">
+                  <div className="w-4 h-4 rounded-full border border-white/10" style={{ backgroundColor: currentTheme.previewColors.primary }} />
+                  <div className="w-4 h-4 rounded-full border border-white/10" style={{ backgroundColor: currentTheme.previewColors.secondary }} />
+                  <div className="w-4 h-4 rounded-full border border-white/10" style={{ backgroundColor: currentTheme.previewColors.accent }} />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-white">{currentTheme.name}</span>
+                  <span className="text-[9px] text-zinc-500 ml-2 capitalize">{currentTheme.category}</span>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 bg-zinc-900 border border-white/5 rounded text-[8px] text-indigo-400 uppercase tracking-widest font-semibold font-mono animate-pulse">Live Preview</span>
+            </div>
+
+            {/* Markdown Preview */}
             <div className="w-full max-w-2xl bg-[#0d1117] border border-zinc-800 rounded-2xl p-6 md:p-8 text-left shadow-2xl relative min-h-full">
               <div className="flex justify-between items-center pb-4 mb-6 border-b border-zinc-800 text-[10px] font-mono text-zinc-550">
                 <span>{username} / README.md (Preview)</span>
-                <span className="px-2 py-0.5 bg-zinc-900 border border-white/5 rounded text-[8px] text-indigo-400 uppercase tracking-widest font-semibold font-mono animate-pulse">Live Draft</span>
               </div>
-
               <article className="github-prose prose prose-invert max-w-none text-left leading-relaxed text-[#e6edf3]">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeRaw]}
-                  components={{
-                    h1: ({ ...props }) => <h1 className="text-2xl font-extrabold pb-2 mb-4 border-b border-zinc-850 text-white tracking-tight" {...props} />,
-                    h2: ({ ...props }) => <h2 className="text-xl font-bold pb-2 mt-6 mb-3 border-b border-zinc-850 text-white tracking-tight" {...props} />,
-                    h3: ({ ...props }) => <h3 className="text-base font-semibold mt-4 mb-2 text-zinc-200" {...props} />,
-                    p: ({ ...props }) => <p className="mb-3 text-zinc-300 text-xs md:text-sm leading-relaxed" {...props} />,
-                    ul: ({ ...props }) => <ul className="list-disc pl-5 mb-3 space-y-1 text-zinc-350 text-xs md:text-sm" {...props} />,
-                    ol: ({ ...props }) => <ol className="list-decimal pl-5 mb-3 space-y-1 text-zinc-350 text-xs md:text-sm" {...props} />,
-                    li: ({ ...props }) => <li className="pl-0.5" {...props} />,
-                    code: ({ className, children, ...props }) => {
-                      const match = /language-(\w+)/.exec(className || '');
-                      return !match ? (
-                        <code className="bg-zinc-850 px-1 py-0.5 rounded text-pink-400 text-xs font-mono" {...props}>
-                          {children}
-                        </code>
-                      ) : (
-                        <pre className="bg-zinc-950 p-3 rounded-lg border border-white/5 overflow-x-auto text-[10px] font-mono text-zinc-300">
-                          <code>{children}</code>
-                        </pre>
-                      );
-                    },
-                    blockquote: ({ ...props }) => (
-                      <blockquote className="border-l-4 border-zinc-700 pl-4 py-1 italic text-zinc-450 my-3" {...props} />
-                    ),
-                    table: ({ ...props }) => (
-                      <div className="overflow-x-auto my-4 border border-zinc-850 rounded-lg">
-                        <table className="min-w-full divide-y divide-zinc-850 text-[10px] text-left" {...props} />
-                      </div>
-                    ),
-                    th: ({ ...props }) => <th className="px-3 py-2 bg-zinc-900 text-zinc-300 font-bold uppercase" {...props} />,
-                    td: ({ ...props }) => <td className="px-3 py-2 bg-zinc-900/30 text-zinc-400 border-t border-zinc-850" {...props} />,
-                    a: ({ ...props }) => <a className="text-blue-400 hover:underline cursor-pointer" target="_blank" rel="noopener noreferrer" {...props} />,
-                    img: ({ src, alt, ...props }) => {
-                      if (!src || typeof src !== 'string') {
-                        return (
-                          <img className="max-w-full rounded-md inline-block my-1.5" src={src as any} alt={alt} {...props} />
-                        );
-                      }
-                      
-                      const isStatsDomain = src.includes('github-readme-stats.vercel.app') || src.includes('github-readme-stats.shion.dev');
-                      
-                      if (isStatsDomain && src.includes('/api') && !src.includes('top-langs') && !src.includes('/pin/')) {
-                        return <StatsCardPreview stats={stats} username={username} />;
-                      }
-
-                      if (isStatsDomain && src.includes('/api/top-langs')) {
-                        return <LanguagesCardPreview languages={langs} />;
-                      }
-
-                      if (src.includes('github-profile-trophy.vercel.app')) {
-                        return <TrophiesCardPreview stats={stats} profile={profile} />;
-                      }
-
-                      if (isStatsDomain && src.includes('/api/pin/')) {
-                        const repoName = new URLSearchParams(src.split('?')[1] || '').get('repo') || '';
-                        return <RepositoryPinPreview repoName={repoName} topRepos={repos} />;
-                      }
-
-                      return (
-                        <img className="max-w-full rounded-md inline-block my-1.5" src={src} alt={alt} {...props} />
-                      );
-                    }
-                  }}
-                >
-                  {previewMarkdown}
-                </ReactMarkdown>
+                <ThemePreviewRenderer
+                  markdown={previewMarkdown}
+                  username={username}
+                  profile={profile}
+                  repos={repos}
+                  langs={langs}
+                  stats={stats}
+                />
               </article>
             </div>
           </div>
@@ -325,9 +382,15 @@ export default function TemplateSelectorModal({ isOpen, onClose, onSelect }: Tem
 
         {/* Modal Action Footer */}
         <div className="p-4 md:px-6 border-t border-white/5 bg-[#181520] flex items-center justify-between shrink-0">
-          <div className="hidden sm:block">
-            <span className="text-[10px] text-zinc-450">Selected Start Layout: </span>
-            <span className="text-[10.5px] font-bold text-white font-mono">{currentTemplate.title}</span>
+          <div className="hidden sm:flex items-center gap-2">
+            <div className="flex gap-0.5">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: currentTheme.previewColors.primary }} />
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: currentTheme.previewColors.secondary }} />
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: currentTheme.previewColors.accent }} />
+            </div>
+            <span className="text-[10px] text-zinc-450">Selected: </span>
+            <span className="text-[10.5px] font-bold text-white font-mono">{currentTheme.name}</span>
+            <span className="text-[9px] text-zinc-550 capitalize">({currentTheme.category})</span>
           </div>
           <div className="flex gap-2.5 w-full sm:w-auto">
             <button
@@ -340,7 +403,7 @@ export default function TemplateSelectorModal({ isOpen, onClose, onSelect }: Tem
               onClick={handleApply}
               className="flex-1 sm:flex-initial px-5 py-2 text-xs font-bold rounded-lg bg-gradient-to-r from-indigo-400 to-[#7c3aed] text-white hover:shadow-[0_0_20px_rgba(124,58,237,0.4)] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <span>Apply Template</span>
+              <span>Apply Theme</span>
               <Check className="h-4 w-4" />
             </button>
           </div>

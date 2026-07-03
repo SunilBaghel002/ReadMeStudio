@@ -9,7 +9,6 @@ import Inspector from '@/components/Builder/Inspector';
 import ExportModal from '@/components/Preview/ExportModal';
 import TemplateSelectorModal from '@/components/Preview/TemplateSelectorModal';
 import Link from 'next/link';
-import { generateMarkdown } from '@/lib/markdown';
 import { 
   Layout, 
   ChevronLeft, 
@@ -37,7 +36,10 @@ export default function BuilderPage() {
     accentColor,
     statsCardTheme,
     readmeStyle,
-    hasHydrated
+    hasHydrated,
+    selectedThemeId,
+    themeCustomization,
+    getThemeMarkdown,
   } = useBuilderStore();
 
   const [mobileTab, setMobileTab] = useState<'sections' | 'preview' | 'customize'>('preview');
@@ -52,17 +54,10 @@ export default function BuilderPage() {
     }
   }, [hasHydrated, githubData, username, router]);
 
-  // Compute markdown output on-demand to prevent parent re-renders when typing
+  // Compute markdown output using the theme-based generator
   const getLatestMarkdown = () => {
     if (!username) return '';
-    return generateMarkdown(sections, username, {
-      showEmojis,
-      showBanners,
-      bannerImage,
-      accentColor,
-      statsCardTheme,
-      readmeStyle,
-    });
+    return getThemeMarkdown();
   };
 
   const handleSwitchProfile = () => {

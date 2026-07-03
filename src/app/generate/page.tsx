@@ -17,27 +17,29 @@ import WebGLBackground from '@/components/UI/WebGLBackground';
 export default function OnboardingPage() {
   const router = useRouter();
   const [usernameInput, setUsernameInput] = useState('');
-  const { fetchUserData, isLoading, error, selectedTemplate, resetStore } = useBuilderStore();
+  const { fetchUserData, isLoading, error, selectedTemplate, selectedThemeId, resetStore, loadTheme } = useBuilderStore();
 
   // Redirect to templates page if no template was selected
   useEffect(() => {
-    if (!selectedTemplate) {
+    if (!selectedTemplate && !selectedThemeId) {
       router.push('/templates');
     }
-  }, [selectedTemplate, router]);
+  }, [selectedTemplate, selectedThemeId, router]);
 
   const handleFetch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!usernameInput.trim()) return;
 
-    // Reset previous fetched data but keep selectedTemplate!
+    // Reset previous fetched data but keep selectedTemplate/Theme!
     const activeTemplate = selectedTemplate;
+    const activeThemeId = selectedThemeId;
     resetStore();
     
-    // Restore template in state
-    if (activeTemplate) {
+    // Restore template/theme in state
+    if (activeThemeId) {
+      loadTheme(activeThemeId);
+    } else if (activeTemplate) {
       useBuilderStore.setState({ selectedTemplate: activeTemplate });
-      // Re-load the template structure into sections
       const store = useBuilderStore.getState();
       store.loadTemplate(activeTemplate as any);
     }

@@ -5,14 +5,19 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useBuilderStore } from '@/store/useBuilderStore';
-import { TEMPLATES } from '@/config/templates.config';
+import { THEME_LIST, THEME_CATEGORIES, CATEGORY_LABELS } from '@/themes';
 import { 
-  Cpu, 
-  Layout, 
-  Sparkles, 
-  GraduationCap, 
-  Layers, 
-  CloudLightning,
+  Waves,
+  Terminal,
+  Minus,
+  Zap,
+  Briefcase,
+  Gamepad2,
+  Crown,
+  Palette,
+  GitPullRequest,
+  GraduationCap,
+  Sparkles,
   ArrowRight,
   ArrowLeft
 } from 'lucide-react';
@@ -21,27 +26,40 @@ import WebGLBackground from '@/components/UI/WebGLBackground';
 import TemplateSelectorModal from '@/components/Preview/TemplateSelectorModal';
 
 const ICON_MAP: Record<string, React.ComponentType<any>> = {
-  Cpu,
-  Layout,
-  Sparkles,
+  Waves,
+  Terminal,
+  Minus,
+  Zap,
+  Briefcase,
+  Gamepad2,
+  Crown,
+  Palette,
+  GitPullRequest,
   GraduationCap,
-  Layers,
-  CloudLightning,
+};
+
+const CATEGORY_ORDER = ['professional', 'creative', 'technical', 'fun'] as const;
+
+const CATEGORY_GRADIENTS: Record<string, string> = {
+  professional: 'from-blue-500/10 via-transparent to-transparent',
+  creative: 'from-pink-500/10 via-transparent to-transparent',
+  technical: 'from-green-500/10 via-transparent to-transparent',
+  fun: 'from-amber-500/10 via-transparent to-transparent',
 };
 
 export default function TemplatesPage() {
   const router = useRouter();
-  const { loadTemplate, selectedTemplate } = useBuilderStore();
+  const { loadTheme, selectedThemeId } = useBuilderStore();
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [activePreviewId, setActivePreviewId] = React.useState('');
 
-  const handleSelectTemplate = (id: any) => {
+  const handleSelectTemplate = (id: string) => {
     setActivePreviewId(id);
     setIsModalOpen(true);
   };
 
   const handleConfirmSelect = (id: string) => {
-    loadTemplate(id as any);
+    loadTheme(id);
     router.push('/generate');
   };
 
@@ -73,8 +91,8 @@ export default function TemplatesPage() {
       </nav>
 
       {/* Page Content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-6 pt-28 pb-16 z-10 relative">
-        <div className="w-full max-w-5xl flex flex-col items-center">
+      <main className="flex-1 flex flex-col items-center p-6 pt-28 pb-16 z-10 relative">
+        <div className="w-full max-w-6xl flex flex-col items-center">
           
           {/* Header Title */}
           <div className="text-center max-w-2xl mb-12">
@@ -84,7 +102,8 @@ export default function TemplatesPage() {
               transition={{ duration: 0.4 }}
               className="mb-4 inline-flex items-center gap-2 px-3 py-1 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 text-[10px] font-bold uppercase tracking-widest backdrop-blur-md"
             >
-              <span>Step 1: Select Your Template</span>
+              <Sparkles className="h-3 w-3" />
+              <span>Step 1: Choose Your Theme</span>
             </motion.div>
             <motion.h1
               initial={{ opacity: 0, y: 15 }}
@@ -92,7 +111,7 @@ export default function TemplatesPage() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="text-3xl md:text-5xl font-black tracking-tight text-white mb-4"
             >
-              Choose a template to build your README
+              Pick a theme that matches your vibe
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 15 }}
@@ -100,79 +119,110 @@ export default function TemplatesPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="text-zinc-400 text-sm md:text-base font-light leading-relaxed"
             >
-              Start with a carefully arranged structural layout tailored for different development roles. Customize everything later in the editor.
+              Each theme is a completely different design experience — from minimal typography to RPG character sheets. Every theme generates unique markdown.
             </motion.p>
           </div>
 
-          {/* Templates Grid */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full"
-          >
-            {TEMPLATES.map((tmpl, idx) => {
-              const Icon = ICON_MAP[tmpl.icon] || Layout;
-              const isSelected = selectedTemplate === tmpl.id;
+          {/* Themes by Category */}
+          {CATEGORY_ORDER.map((category, catIdx) => {
+            const themes = THEME_CATEGORIES[category];
+            const catInfo = CATEGORY_LABELS[category];
+            if (themes.length === 0) return null;
 
-              return (
-                <div
-                  key={tmpl.id}
-                  onClick={() => handleSelectTemplate(tmpl.id)}
-                  className={cn(
-                    'p-6 rounded-2xl border text-left flex flex-col justify-between transition-all duration-300 relative group cursor-pointer shadow-xl bg-zinc-950/40 border-white/5 hover:border-indigo-500/50 hover:bg-zinc-950/65 hover:shadow-[0_0_30px_rgba(124,58,237,0.15)] hover:scale-[1.02]'
-                  )}
-                >
-                  <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  
-                  <div>
-                    {/* Top Row: Icon and Status */}
-                    <div className="flex justify-between items-center mb-5">
-                      <div className="h-10 w-10 rounded-xl flex items-center justify-center border border-white/5 bg-zinc-900 group-hover:border-indigo-500/30 group-hover:bg-[#7c3aed]/10 transition-all duration-300">
-                        <Icon className="h-5 w-5 text-indigo-400 group-hover:text-indigo-300 transition-colors" />
-                      </div>
-                      <span className="text-[9px] font-mono text-zinc-550 group-hover:text-indigo-400 uppercase tracking-widest transition-colors flex items-center gap-1">
-                        <span>Select</span>
-                        <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-                      </span>
-                    </div>
-
-                    {/* Meta */}
-                    <h3 className="text-base font-bold text-white mb-2 group-hover:text-indigo-250 transition-colors">
-                      {tmpl.title}
-                    </h3>
-                    <p className="text-xs text-zinc-400 font-light leading-relaxed mb-6 group-hover:text-zinc-350 transition-colors">
-                      {tmpl.description}
-                    </p>
-                  </div>
-
-                  {/* Enabled Sections Badges */}
-                  <div className="flex flex-wrap gap-1.5 mt-auto pt-4 border-t border-white/5">
-                    {tmpl.enabledSections.slice(0, 4).map((sect) => (
-                      <span 
-                        key={sect} 
-                        className="text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 bg-white/5 border border-white/5 rounded-md text-zinc-500 group-hover:text-zinc-400 group-hover:bg-white/10 transition-colors"
-                      >
-                        {sect}
-                      </span>
-                    ))}
-                    {tmpl.enabledSections.length > 4 && (
-                      <span className="text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 bg-white/5 border border-white/5 rounded-md text-zinc-550 group-hover:text-zinc-500 transition-colors">
-                        +{tmpl.enabledSections.length - 4} more
-                      </span>
-                    )}
-                  </div>
+            return (
+              <motion.div
+                key={category}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 + catIdx * 0.1 }}
+                className="w-full mb-10"
+              >
+                {/* Category Header */}
+                <div className="flex items-center gap-3 mb-5">
+                  <h2 className="text-lg font-bold text-white">{catInfo.label}</h2>
+                  <span className="text-[10px] text-zinc-500 font-light">{catInfo.description}</span>
+                  <div className="flex-1 h-px bg-white/5" />
                 </div>
-              );
-            })}
-          </motion.div>
+
+                {/* Theme Cards Grid */}
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {themes.map((theme) => {
+                    const Icon = ICON_MAP[theme.icon] || Sparkles;
+                    const isSelected = selectedThemeId === theme.id;
+
+                    return (
+                      <div
+                        key={theme.id}
+                        onClick={() => handleSelectTemplate(theme.id)}
+                        className={cn(
+                          'p-5 rounded-2xl border text-left flex flex-col justify-between transition-all duration-300 relative group cursor-pointer shadow-xl bg-zinc-950/40 border-white/5 hover:border-indigo-500/50 hover:bg-zinc-950/65 hover:shadow-[0_0_30px_rgba(124,58,237,0.15)] hover:scale-[1.02]'
+                        )}
+                      >
+                        {/* Gradient accent top */}
+                        <div 
+                          className="absolute top-0 inset-x-0 h-1 rounded-t-2xl opacity-60 group-hover:opacity-100 transition-opacity"
+                          style={{ background: `linear-gradient(to right, ${theme.previewColors.primary}, ${theme.previewColors.secondary}, ${theme.previewColors.accent})` }}
+                        />
+                        
+                        <div>
+                          {/* Top Row: Color dots + Icon */}
+                          <div className="flex justify-between items-center mb-4">
+                            <div className="flex items-center gap-2">
+                              {/* Color palette preview */}
+                              <div className="flex gap-1">
+                                <div className="w-5 h-5 rounded-lg border border-white/10" style={{ backgroundColor: theme.previewColors.primary }} />
+                                <div className="w-5 h-5 rounded-lg border border-white/10" style={{ backgroundColor: theme.previewColors.secondary }} />
+                                <div className="w-5 h-5 rounded-lg border border-white/10" style={{ backgroundColor: theme.previewColors.accent }} />
+                                <div className="w-5 h-5 rounded-lg border border-white/10" style={{ backgroundColor: theme.previewColors.background }} />
+                              </div>
+                            </div>
+                            <div className={cn(
+                              "h-9 w-9 rounded-xl flex items-center justify-center border border-white/5 bg-zinc-900 group-hover:border-indigo-500/30 group-hover:bg-[#7c3aed]/10 transition-all duration-300"
+                            )}>
+                              <Icon className="h-4 w-4 text-indigo-400 group-hover:text-indigo-300 transition-colors" />
+                            </div>
+                          </div>
+
+                          {/* Title + Badge */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-base font-bold text-white group-hover:text-indigo-250 transition-colors">
+                              {theme.name}
+                            </h3>
+                            {isSelected && (
+                              <span className="px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-[#a5b4fc] text-[8px] font-mono font-semibold">Active</span>
+                            )}
+                          </div>
+
+                          {/* Description */}
+                          <p className="text-xs text-zinc-400 font-light leading-relaxed mb-4 group-hover:text-zinc-350 transition-colors line-clamp-2">
+                            {theme.description}
+                          </p>
+                        </div>
+
+                        {/* Bottom: Category + Preview link */}
+                        <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                          <span className="text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 bg-white/5 border border-white/5 rounded-md text-zinc-500 capitalize">
+                            {theme.category}
+                          </span>
+                          <span className="text-[9px] font-mono text-zinc-550 group-hover:text-indigo-400 uppercase tracking-widest transition-colors flex items-center gap-1">
+                            <span>Preview</span>
+                            <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            );
+          })}
 
         </div>
       </main>
 
       {/* Footer */}
       <footer className="w-full py-8 text-center text-xs text-zinc-550 border-t border-white/5 bg-[#15121b]/80 relative z-20">
-        <p>Choose your starting structure. ReadMeStudio will inject real GitHub data into this template layout.</p>
+        <p>Each theme is a complete design identity — not just colors, but layout, structure, sections, and personality.</p>
       </footer>
 
       {/* Template Selector/Preview Modal */}

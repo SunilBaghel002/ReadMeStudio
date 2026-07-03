@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { useBuilderStore } from '@/store/useBuilderStore';
+import { useShallow } from 'zustand/react/shallow';
 import { generateMarkdown } from '@/lib/markdown';
 import ExportModal from './ExportModal';
 import { 
@@ -34,46 +35,153 @@ import {
   RepositoryPinPreview
 } from './CustomPreviewCards';
 
+// Extracted, memoized markdown rendering subcomponent to avoid heavy parsing on every intermediate state change
+const MarkdownRenderer = React.memo(({
+  markdown,
+  canvasBgColor,
+  username,
+  profile,
+  topRepos,
+  languages,
+  streak,
+  stats,
+}: {
+  markdown: string;
+  canvasBgColor: string;
+  username: string;
+  profile: any;
+  topRepos: any;
+  languages: any;
+  streak: any;
+  stats: any;
+}) => {
+  return (
+    <article 
+      className={cn(
+        "github-prose max-w-none text-left leading-relaxed",
+        canvasBgColor === '#ffffff' 
+          ? "prose text-zinc-850" 
+          : "prose prose-invert text-[#e6edf3]"
+      )}
+    >
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
+        components={{
+          h1: ({ ...props }) => <h1 className="text-3xl font-extrabold pb-3 mb-6 border-b border-zinc-850 text-white tracking-tight" {...props} />,
+          h2: ({ ...props }) => <h2 className="text-2xl font-bold pb-2 mt-8 mb-4 border-b border-zinc-850 text-white tracking-tight" {...props} />,
+          h3: ({ ...props }) => <h3 className="text-lg font-semibold mt-6 mb-3 text-zinc-200" {...props} />,
+          p: ({ ...props }) => <p className="mb-4 text-zinc-300 text-xs md:text-sm leading-relaxed" {...props} />,
+          ul: ({ ...props }) => <ul className="list-disc pl-6 mb-4 space-y-1.5 text-zinc-350 text-xs md:text-sm" {...props} />,
+          ol: ({ ...props }) => <ol className="list-decimal pl-6 mb-4 space-y-1.5 text-zinc-350 text-xs md:text-sm" {...props} />,
+          li: ({ ...props }) => <li className="pl-0.5" {...props} />,
+          code: ({ className, children, ...props }) => {
+            const match = /language-(\w+)/.exec(className || '');
+            return !match ? (
+              <code className="bg-zinc-850 px-1.5 py-0.5 rounded text-pink-400 text-xs font-mono" {...props}>
+                {children}
+              </code>
+            ) : (
+              <pre className="bg-zinc-950 p-4 rounded-xl border border-white/5 overflow-x-auto text-xs font-mono text-zinc-300">
+                <code>{children}</code>
+              </pre>
+            );
+          },
+          blockquote: ({ ...props }) => (
+            <blockquote className="border-l-4 border-zinc-700 pl-4 py-1 italic text-zinc-450 my-4" {...props} />
+          ),
+          table: ({ ...props }) => (
+            <div className="overflow-x-auto my-6 border border-zinc-850 rounded-xl">
+              <table className="min-w-full divide-y divide-zinc-850 text-xs text-left" {...props} />
+            </div>
+          ),
+          th: ({ ...props }) => <th className="px-4 py-3 bg-zinc-900 text-zinc-350 font-bold uppercase tracking-wider" {...props} />,
+          td: ({ ...props }) => <td className="px-4 py-3 bg-zinc-900/30 text-zinc-400 border-t border-zinc-850" {...props} />,
+          a: ({ ...props }) => <a className="text-blue-400 hover:underline cursor-pointer" target="_blank" rel="noopener noreferrer" {...props} />,
+          img: ({ src, alt, ...props }) => {
+            if (!src || typeof src !== 'string') {
+              return (
+                <img className="max-w-full rounded-md inline-block my-2" src={src as any} alt={alt} {...props} />
+              );
+            }
+            
+            const isStatsDomain = src.includes('github-readme-stats.vercel.app') || src.includes('github-readme-stats.shion.dev');
+            
+            // 1. Check if it's the GitHub Stats Card
+            if (src.includes('/api/github/stats') || (isStatsDomain && src.includes('/api') && !src.includes('top-langs') && !src.includes('/pin/'))) {
+              return <StatsCardPreview stats={stats} username={username} />;
+            }
+
+            // 2. Check if it's the Top Languages Card
+            if (src.includes('/api/github/languages') || (isStatsDomain && src.includes('/api/top-langs'))) {
+              return <LanguagesCardPreview languages={languages} />;
+            }
+
+            // 3. Check if it's the Streak Card
+            if (src.includes('/api/github/streak') || src.includes('streak-stats.demolab.com')) {
+              return <StreakCardPreview streak={streak} />;
+            }
+
+            // 4. Check if it's the Trophies Card
+            if (src.includes('/api/github/trophies') || src.includes('github-profile-trophy.vercel.app')) {
+              return <TrophiesCardPreview stats={stats} profile={profile} />;
+            }
+
+            // 5. Check if it's a Repository Pin Card
+            if (isStatsDomain && src.includes('/api/pin/')) {
+              const repoName = new URLSearchParams(src.split('?')[1] || '').get('repo') || '';
+              return <RepositoryPinPreview repoName={repoName} topRepos={topRepos} />;
+            }
+
+            // Fallback to standard img tag
+            return (
+              <img className="max-w-full rounded-md inline-block my-2" src={src} alt={alt} {...props} />
+            );
+          }
+        }}
+      >
+        {markdown}
+      </ReactMarkdown>
+    </article>
+  );
+});
+MarkdownRenderer.displayName = 'MarkdownRenderer';
+
 export default function PreviewPanel() {
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview');
   const [githubTab, setGithubTab] = useState<'overview' | 'repos'>('overview');
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const {
-    sections,
-    username,
-    profile,
-    topRepos,
-    languages,
-    stats,
-    streak,
-    showEmojis,
-    showBanners,
-    bannerImage,
-    accentColor,
-    statsCardTheme,
-    readmeStyle,
-    canvasBgColor,
-  } = useBuilderStore();
+  // Subscribe selectively to specific Zustand store slices
+  const sections = useBuilderStore(useShallow((state) => state.sections));
+  const username = useBuilderStore((state) => state.username);
+  const profile = useBuilderStore(useShallow((state) => state.profile));
+  const topRepos = useBuilderStore(useShallow((state) => state.topRepos));
+  const languages = useBuilderStore(useShallow((state) => state.languages));
+  const stats = useBuilderStore(useShallow((state) => state.stats));
+  const streak = useBuilderStore(useShallow((state) => state.streak));
+  const showEmojis = useBuilderStore((state) => state.showEmojis);
+  const showBanners = useBuilderStore((state) => state.showBanners);
+  const bannerImage = useBuilderStore((state) => state.bannerImage);
+  const accentColor = useBuilderStore((state) => state.accentColor);
+  const statsCardTheme = useBuilderStore((state) => state.statsCardTheme);
+  const readmeStyle = useBuilderStore((state) => state.readmeStyle);
+  const canvasBgColor = useBuilderStore((state) => state.canvasBgColor);
+  const selectedThemeId = useBuilderStore((state) => state.selectedThemeId);
+  const themeCustomization = useBuilderStore(useShallow((state) => state.themeCustomization));
+  const getThemeMarkdown = useBuilderStore((state) => state.getThemeMarkdown);
 
   const [markdown, setMarkdown] = useState('');
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      const md = generateMarkdown(sections, username, {
-        showEmojis,
-        showBanners,
-        bannerImage,
-        accentColor,
-        statsCardTheme,
-        readmeStyle,
-      });
+      const md = getThemeMarkdown();
       setMarkdown(md);
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [sections, username, showEmojis, showBanners, bannerImage, accentColor, statsCardTheme, readmeStyle]);
+  }, [sections, username, showEmojis, showBanners, bannerImage, accentColor, statsCardTheme, readmeStyle, selectedThemeId, themeCustomization, getThemeMarkdown]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(markdown);
@@ -233,93 +341,16 @@ export default function PreviewPanel() {
                   <span className="text-[10px]">preview mode</span>
                 </div>
 
-                <article 
-                  className={cn(
-                    "github-prose max-w-none text-left leading-relaxed",
-                    canvasBgColor === '#ffffff' 
-                      ? "prose text-zinc-850" 
-                      : "prose prose-invert text-[#e6edf3]"
-                  )}
-                >
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeRaw]}
-                    components={{
-                      h1: ({ ...props }) => <h1 className="text-3xl font-extrabold pb-3 mb-6 border-b border-zinc-850 text-white tracking-tight" {...props} />,
-                      h2: ({ ...props }) => <h2 className="text-2xl font-bold pb-2 mt-8 mb-4 border-b border-zinc-850 text-white tracking-tight" {...props} />,
-                      h3: ({ ...props }) => <h3 className="text-lg font-semibold mt-6 mb-3 text-zinc-200" {...props} />,
-                      p: ({ ...props }) => <p className="mb-4 text-zinc-300 text-xs md:text-sm leading-relaxed" {...props} />,
-                      ul: ({ ...props }) => <ul className="list-disc pl-6 mb-4 space-y-1.5 text-zinc-350 text-xs md:text-sm" {...props} />,
-                      ol: ({ ...props }) => <ol className="list-decimal pl-6 mb-4 space-y-1.5 text-zinc-350 text-xs md:text-sm" {...props} />,
-                      li: ({ ...props }) => <li className="pl-0.5" {...props} />,
-                      code: ({ className, children, ...props }) => {
-                        const match = /language-(\w+)/.exec(className || '');
-                        return !match ? (
-                          <code className="bg-zinc-850 px-1.5 py-0.5 rounded text-pink-400 text-xs font-mono" {...props}>
-                            {children}
-                          </code>
-                        ) : (
-                          <pre className="bg-zinc-950 p-4 rounded-xl border border-white/5 overflow-x-auto text-xs font-mono text-zinc-300">
-                            <code>{children}</code>
-                          </pre>
-                        );
-                      },
-                      blockquote: ({ ...props }) => (
-                        <blockquote className="border-l-4 border-zinc-700 pl-4 py-1 italic text-zinc-450 my-4" {...props} />
-                      ),
-                      table: ({ ...props }) => (
-                        <div className="overflow-x-auto my-6 border border-zinc-850 rounded-xl">
-                          <table className="min-w-full divide-y divide-zinc-850 text-xs text-left" {...props} />
-                        </div>
-                      ),
-                      th: ({ ...props }) => <th className="px-4 py-3 bg-zinc-900 text-zinc-350 font-bold uppercase tracking-wider" {...props} />,
-                      td: ({ ...props }) => <td className="px-4 py-3 bg-zinc-900/30 text-zinc-400 border-t border-zinc-850" {...props} />,
-                      a: ({ ...props }) => <a className="text-blue-400 hover:underline cursor-pointer" target="_blank" rel="noopener noreferrer" {...props} />,
-                      img: ({ src, alt, ...props }) => {
-                        if (!src || typeof src !== 'string') {
-                          return (
-                            <img className="max-w-full rounded-md inline-block my-2" src={src as any} alt={alt} {...props} />
-                          );
-                        }
-                        
-                        const isStatsDomain = src.includes('github-readme-stats.vercel.app') || src.includes('github-readme-stats.shion.dev');
-                        
-                        // 1. Check if it's the GitHub Stats Card
-                        if (src.includes('/api/github/stats') || (isStatsDomain && src.includes('/api') && !src.includes('top-langs') && !src.includes('/pin/'))) {
-                          return <StatsCardPreview stats={stats} username={username} />;
-                        }
-
-                        // 2. Check if it's the Top Languages Card
-                        if (src.includes('/api/github/languages') || (isStatsDomain && src.includes('/api/top-langs'))) {
-                          return <LanguagesCardPreview languages={languages} />;
-                        }
-
-                        // 3. Check if it's the Streak Card
-                        if (src.includes('/api/github/streak') || src.includes('streak-stats.demolab.com')) {
-                          return <StreakCardPreview streak={streak} />;
-                        }
-
-                        // 4. Check if it's the Trophies Card
-                        if (src.includes('/api/github/trophies') || src.includes('github-profile-trophy.vercel.app')) {
-                          return <TrophiesCardPreview stats={stats} profile={profile} />;
-                        }
-
-                        // 5. Check if it's a Repository Pin Card
-                        if (isStatsDomain && src.includes('/api/pin/')) {
-                          const repoName = new URLSearchParams(src.split('?')[1] || '').get('repo') || '';
-                          return <RepositoryPinPreview repoName={repoName} topRepos={topRepos} />;
-                        }
-
-                        // Fallback to standard img tag
-                        return (
-                          <img className="max-w-full rounded-md inline-block my-2" src={src} alt={alt} {...props} />
-                        );
-                      }
-                    }}
-                  >
-                    {markdown}
-                  </ReactMarkdown>
-                </article>
+                <MarkdownRenderer
+                  markdown={markdown}
+                  canvasBgColor={canvasBgColor}
+                  username={username}
+                  profile={profile}
+                  topRepos={topRepos}
+                  languages={languages}
+                  streak={streak}
+                  stats={stats}
+                />
               </div>
             ) : (
               /* Repositories layout replica view */

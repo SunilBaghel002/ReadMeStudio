@@ -15,6 +15,8 @@ import {
   GitHubStatsData,
 } from '@/types/github.types';
 import { TEMPLATES } from '@/config/templates.config';
+import { ThemeCustomization } from '@/types/theme.types';
+import { getTheme, resolveLegacyTemplateId, generateThemeMarkdown } from '@/themes';
 
 interface BuilderStore {
   username: string;
@@ -46,6 +48,8 @@ interface BuilderStore {
   bannerImage: string;
   selectedSectionId: string | null;
   hasHydrated: boolean;
+  selectedThemeId: string;
+  themeCustomization: ThemeCustomization;
   canvasBgColor: string;
   cardBgColor: string;
   cardBorderColor: string;
@@ -73,7 +77,11 @@ interface BuilderStore {
   setCardBorderColor: (color: string) => void;
   setCardBgOpacity: (opacity: number) => void;
   resetStore: () => void;
-  loadTemplate: (templateType: 'minimal' | 'fullstack' | 'opensource' | 'student' | 'creative' | 'devops') => void;
+  loadTemplate: (templateType: string) => void;
+  loadTheme: (themeId: string) => void;
+  setSelectedThemeId: (id: string) => void;
+  setThemeCustomization: (customization: Partial<ThemeCustomization>) => void;
+  getThemeMarkdown: () => string;
   addCustomSection: () => void;
   deleteSection: (id: string) => void;
   updateSectionTitle: (id: string, title: string) => void;
@@ -289,7 +297,7 @@ export const DEFAULT_SECTIONS = (username: string, name: string, bio: string): B
   },
 ];
 
-const THEME_ACCENTS: Record<AppTheme, { accent: string; statsTheme: string }> = {
+const THEME_ACCENTS: Record<string, { accent: string; statsTheme: string }> = {
   minimal: { accent: '#fafafa', statsTheme: 'neutral' },
   dark: { accent: '#3b82f6', statsTheme: 'github_dark' },
   cyberpunk: { accent: '#ff007f', statsTheme: 'cyberpunk' },
@@ -313,16 +321,30 @@ export const useBuilderStore = create<BuilderStore>()(
       isLoading: false,
       error: null,
       sections: DEFAULT_SECTIONS('', '', ''),
-      activeTheme: 'dark',
-      readmeStyle: 'professional',
+      activeTheme: 'dark' as AppTheme,
+      readmeStyle: 'professional' as ReadmeStyle,
       accentColor: '#3b82f6',
-      fontStyle: 'sans',
+      fontStyle: 'sans' as FontStyle,
       statsCardTheme: 'github_dark',
       showEmojis: true,
       showBanners: false,
       bannerImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80',
       selectedSectionId: 'header',
       hasHydrated: false,
+      selectedThemeId: 'gradient-wave',
+      themeCustomization: {
+        primaryColor: '#667EEA',
+        secondaryColor: '#764BA2',
+        accentColor: '#F093FB',
+        alignment: 'center' as const,
+        emojiLevel: 'minimal' as const,
+        showTypingAnimation: true,
+        showContributionGraph: true,
+        showTrophies: true,
+        showQuote: true,
+        showVisitorCounter: true,
+        showSnakeAnimation: true,
+      },
       canvasBgColor: '#0d1117',
       cardBgColor: '#0d0c1d',
       cardBorderColor: '#27272a',
@@ -504,14 +526,28 @@ export const useBuilderStore = create<BuilderStore>()(
           isLoading: false,
           error: null,
           sections: DEFAULT_SECTIONS('', '', ''),
-          activeTheme: 'dark',
-          readmeStyle: 'professional',
+          activeTheme: 'dark' as AppTheme,
+          readmeStyle: 'professional' as ReadmeStyle,
           accentColor: '#3b82f6',
-          fontStyle: 'sans',
+          fontStyle: 'sans' as FontStyle,
           statsCardTheme: 'github_dark',
           showEmojis: true,
           showBanners: false,
           selectedSectionId: 'header',
+          selectedThemeId: 'gradient-wave',
+          themeCustomization: {
+            primaryColor: '#667EEA',
+            secondaryColor: '#764BA2',
+            accentColor: '#F093FB',
+            alignment: 'center' as const,
+            emojiLevel: 'minimal' as const,
+            showTypingAnimation: true,
+            showContributionGraph: true,
+            showTrophies: true,
+            showQuote: true,
+            showVisitorCounter: true,
+            showSnakeAnimation: true,
+          },
           canvasBgColor: '#0d1117',
           cardBgColor: '#0d0c1d',
           cardBorderColor: '#27272a',
@@ -587,6 +623,86 @@ export const useBuilderStore = create<BuilderStore>()(
         }
       },
 
+      // ═══════════════════════════════════════
+      // NEW THEME SYSTEM
+      // ═══════════════════════════════════════
+      loadTheme: (themeId: string) => {
+        const theme = getTheme(themeId);
+        if (!theme) return;
+
+        const def = theme.definition;
+        set({
+          selectedTemplate: themeId,
+          selectedThemeId: themeId,
+          activeTheme: themeId as AppTheme,
+          accentColor: def.defaultConfig.primaryColor,
+          statsCardTheme: def.statsTheme,
+          themeCustomization: { ...def.defaultConfig },
+          canvasBgColor: def.previewColors.background,
+        });
+
+        // Re-inject user's GitHub data if already loaded
+        const currentData = get().githubData;
+        if (currentData) {
+          get().injectGitHubData(currentData);
+        }
+      },
+
+      setSelectedThemeId: (id: string) => {
+        set({ selectedThemeId: id });
+      },
+
+      setThemeCustomization: (customization: Partial<ThemeCustomization>) => {
+        set((state) => ({
+          themeCustomization: { ...state.themeCustomization, ...customization },
+        }));
+      },
+
+      getThemeMarkdown: () => {
+        const state = get();
+        if (!state.username) return '<!-- Enter your GitHub username to generate a preview -->';
+
+        const hostUrl = typeof window !== 'undefined' ? window.location.origin : 'https://readme-studio.vercel.app';
+
+        // Gather skills from sections config
+        const skillsSection = state.sections.find(s => s.type === 'skills');
+        const skills = skillsSection?.config?.skills?.selectedSkills || [];
+
+        // Gather selected repos
+        const projectsSection = state.sections.find(s => s.type === 'projects');
+        const selectedRepos = projectsSection?.config?.projects?.selectedRepos || [];
+
+        // Gather socials
+        const socialsSection = state.sections.find(s => s.type === 'socials');
+        const socials = {
+          github: socialsSection?.config?.socials?.github || state.username,
+          linkedin: socialsSection?.config?.socials?.linkedin || '',
+          twitter: socialsSection?.config?.socials?.twitter || '',
+          portfolio: socialsSection?.config?.socials?.portfolio || '',
+          email: socialsSection?.config?.socials?.email || '',
+        };
+
+        // Gather working-on data
+        const workingOnSection = state.sections.find(s => s.type === 'working-on');
+        const workingOn = workingOnSection?.config?.['working-on'];
+
+        return generateThemeMarkdown(state.selectedThemeId, {
+          username: state.username,
+          name: state.profile?.name || state.username,
+          bio: state.profile?.bio || '',
+          avatarUrl: state.profile?.avatarUrl || `https://github.com/${state.username}.png`,
+          skills,
+          selectedRepos,
+          socials,
+          customization: state.themeCustomization,
+          currentProject: workingOn?.currentProject,
+          currentProjectUrl: workingOn?.currentProjectUrl,
+          learning: workingOn?.learning,
+          collab: workingOn?.collab,
+          baseUrl: hostUrl,
+        });
+      },
+
       addCustomSection: () => {
         const id = `custom_${Date.now()}`;
         const newSec: BuilderSection = {
@@ -629,6 +745,8 @@ export const useBuilderStore = create<BuilderStore>()(
         username: state.username,
         githubData: state.githubData,
         selectedTemplate: state.selectedTemplate,
+        selectedThemeId: state.selectedThemeId,
+        themeCustomization: state.themeCustomization,
         profile: state.profile,
         topRepos: state.topRepos,
         languages: state.languages,

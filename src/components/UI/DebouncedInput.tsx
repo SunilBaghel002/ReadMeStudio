@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface DebouncedInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
   value: string;
@@ -16,8 +16,14 @@ export function DebouncedInput({
   ...props
 }: DebouncedInputProps) {
   const [localValue, setLocalValue] = useState(value);
+  const onDebounceRef = useRef(onDebounce);
 
-  // Sync with store value if it changes from outside (e.g. template loads)
+  // Sync ref with latest callback
+  useEffect(() => {
+    onDebounceRef.current = onDebounce;
+  }, [onDebounce]);
+
+  // Sync with store value if it changes from outside
   useEffect(() => {
     setLocalValue(value);
   }, [value]);
@@ -25,16 +31,16 @@ export function DebouncedInput({
   useEffect(() => {
     const handler = setTimeout(() => {
       if (localValue !== value) {
-        onDebounce(localValue);
+        onDebounceRef.current(localValue);
       }
     }, delay);
 
     return () => clearTimeout(handler);
-  }, [localValue, onDebounce, delay, value]);
+  }, [localValue, delay, value]);
 
   const handleBlur = () => {
     if (localValue !== value) {
-      onDebounce(localValue);
+      onDebounceRef.current(localValue);
     }
   };
 
@@ -63,6 +69,12 @@ export function DebouncedTextarea({
   ...props
 }: DebouncedTextareaProps) {
   const [localValue, setLocalValue] = useState(value);
+  const onDebounceRef = useRef(onDebounce);
+
+  // Sync ref with latest callback
+  useEffect(() => {
+    onDebounceRef.current = onDebounce;
+  }, [onDebounce]);
 
   // Sync with store value if it changes from outside
   useEffect(() => {
@@ -72,16 +84,16 @@ export function DebouncedTextarea({
   useEffect(() => {
     const handler = setTimeout(() => {
       if (localValue !== value) {
-        onDebounce(localValue);
+        onDebounceRef.current(localValue);
       }
     }, delay);
 
     return () => clearTimeout(handler);
-  }, [localValue, onDebounce, delay, value]);
+  }, [localValue, delay, value]);
 
   const handleBlur = () => {
     if (localValue !== value) {
-      onDebounce(localValue);
+      onDebounceRef.current(localValue);
     }
   };
 

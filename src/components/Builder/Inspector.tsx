@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useBuilderStore } from '@/store/useBuilderStore';
+import { useShallow } from 'zustand/react/shallow';
 import { THEME_PALETTES } from '@/lib/theme';
 import { SKILL_BADGES } from '@/lib/markdown';
 import { AppTheme, FontStyle, SectionType, ReadmeStyle } from '@/types/github.types';
+import { THEME_LIST } from '@/themes';
 import { DebouncedInput, DebouncedTextarea } from '@/components/UI/DebouncedInput';
 import {
   Palette,
@@ -15,6 +17,9 @@ import {
   Smile,
   Compass,
   Sliders,
+  AlignLeft,
+  AlignCenter,
+  Type,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -89,6 +94,47 @@ const DEFAULT_TROPHIES_CONFIG = {
   rankFilter: '',
 };
 
+const DebouncedColorInput = React.memo(({ 
+  value, 
+  onChange, 
+  className 
+}: { 
+  value: string; 
+  onChange: (val: string) => void; 
+  className?: string; 
+}) => {
+  const [localValue, setLocalValue] = useState(value);
+  const onChangeRef = useRef(onChange);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (localValue !== value) {
+        onChangeRef.current(localValue);
+      }
+    }, 200);
+
+    return () => clearTimeout(handler);
+  }, [localValue, value]);
+
+  return (
+    <input
+      type="color"
+      value={localValue}
+      onChange={(e) => setLocalValue(e.target.value)}
+      className={className}
+    />
+  );
+});
+DebouncedColorInput.displayName = 'DebouncedColorInput';
+
 const CustomToggle = ({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) => {
   return (
     <button
@@ -144,7 +190,48 @@ export default function Inspector() {
     setCardBorderColor,
     cardBgOpacity,
     setCardBgOpacity,
-  } = useBuilderStore();
+    selectedThemeId,
+    themeCustomization,
+    setThemeCustomization,
+    loadTheme,
+  } = useBuilderStore(useShallow((state) => ({
+    sections: state.sections,
+    selectedSectionId: state.selectedSectionId,
+    updateSectionConfig: state.updateSectionConfig,
+    updateSectionTitle: state.updateSectionTitle,
+    deleteSection: state.deleteSection,
+    activeTheme: state.activeTheme,
+    setActiveTheme: state.setActiveTheme,
+    readmeStyle: state.readmeStyle,
+    setReadmeStyle: state.setReadmeStyle,
+    accentColor: state.accentColor,
+    setAccentColor: state.setAccentColor,
+    fontStyle: state.fontStyle,
+    setFontStyle: state.setFontStyle,
+    statsCardTheme: state.statsCardTheme,
+    setStatsCardTheme: state.setStatsCardTheme,
+    showEmojis: state.showEmojis,
+    setShowEmojis: state.setShowEmojis,
+    showBanners: state.showBanners,
+    setShowBanners: state.setShowBanners,
+    bannerImage: state.bannerImage,
+    setBannerImage: state.setBannerImage,
+    loadTemplate: state.loadTemplate,
+    topRepos: state.topRepos,
+    languages: state.languages,
+    canvasBgColor: state.canvasBgColor,
+    setCanvasBgColor: state.setCanvasBgColor,
+    cardBgColor: state.cardBgColor,
+    setCardBgColor: state.setCardBgColor,
+    cardBorderColor: state.cardBorderColor,
+    setCardBorderColor: state.setCardBorderColor,
+    cardBgOpacity: state.cardBgOpacity,
+    setCardBgOpacity: state.setCardBgOpacity,
+    selectedThemeId: state.selectedThemeId,
+    themeCustomization: state.themeCustomization,
+    setThemeCustomization: state.setThemeCustomization,
+    loadTheme: state.loadTheme,
+  })));
 
   const selectedSection = sections.find((s) => s.id === selectedSectionId);
 
@@ -1606,184 +1693,214 @@ export default function Inspector() {
             <div>
               <h4 className="text-xs font-bold text-zinc-450 uppercase tracking-wider mb-3 flex items-center gap-1">
                 <Compass className="h-3.5 w-3.5 text-indigo-400" />
-                <span>Template Presets</span>
+                <span>Theme Presets</span>
               </h4>
               <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => loadTemplate('fullstack')}
-                  className="p-2.5 rounded-xl border border-white/5 bg-zinc-900/40 hover:bg-zinc-900 text-left text-xs transition-all cursor-pointer"
-                >
-                  <span className="font-semibold block text-zinc-250 text-[11px]">Full Stack Pro</span>
-                  <span className="text-[9px] text-zinc-550">Recommended</span>
-                </button>
-                <button
-                  onClick={() => loadTemplate('minimal')}
-                  className="p-2.5 rounded-xl border border-white/5 bg-zinc-900/40 hover:bg-zinc-900 text-left text-xs transition-all cursor-pointer"
-                >
-                  <span className="font-semibold block text-zinc-250 text-[11px]">Minimal Dev</span>
-                  <span className="text-[9px] text-zinc-550 font-light">Clean Typography</span>
-                </button>
-                <button
-                  onClick={() => loadTemplate('opensource')}
-                  className="p-2.5 rounded-xl border border-white/5 bg-zinc-900/40 hover:bg-zinc-900 text-left text-xs transition-all cursor-pointer"
-                >
-                  <span className="font-semibold block text-zinc-250 text-[11px]">OSS Contrib</span>
-                  <span className="text-[9px] text-zinc-550 font-light">Commit Metrics</span>
-                </button>
-                <button
-                  onClick={() => loadTemplate('creative')}
-                  className="p-2.5 rounded-xl border border-white/5 bg-zinc-900/40 hover:bg-zinc-900 text-left text-xs transition-all cursor-pointer"
-                >
-                  <span className="font-semibold block text-zinc-250 text-[11px]">Creative Dev</span>
-                  <span className="text-[9px] text-zinc-550 font-light">Badges & SVG Typings</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Overall README Style */}
-            <div className="border-t border-white/5 pt-4">
-              <h4 className="text-xs font-bold text-zinc-450 uppercase tracking-wider mb-3">Overall Layout Style</h4>
-              <div className="grid grid-cols-2 gap-1.5">
-                {(['minimal', 'bold', 'creative', 'professional', 'hacker', 'elegant'] as ReadmeStyle[]).map((styleOpt) => (
+                {THEME_LIST.map((theme) => (
                   <button
-                    key={styleOpt}
-                    onClick={() => setReadmeStyle(styleOpt)}
+                    key={theme.id}
+                    onClick={() => loadTheme(theme.id)}
                     className={cn(
-                      'py-2 px-1 text-[10px] rounded-lg border font-semibold uppercase tracking-wider transition-all duration-150 cursor-pointer',
-                      readmeStyle === styleOpt
-                        ? 'bg-zinc-100 text-black border-zinc-100'
-                        : 'bg-zinc-900/40 border-white/5 text-zinc-400 hover:text-zinc-200'
+                      "p-2.5 rounded-xl border text-left text-xs transition-all cursor-pointer flex flex-col justify-between",
+                      selectedThemeId === theme.id 
+                        ? "bg-[#7c3aed]/10 border-[#7c3aed]/40 text-white" 
+                        : "border-white/5 bg-zinc-900/40 hover:bg-zinc-900 text-zinc-400"
                     )}
                   >
-                    {styleOpt}
+                    <span className="font-semibold block text-[11px] truncate w-full">{theme.name}</span>
+                    <span className="text-[8px] text-zinc-550 capitalize mt-1 block">{theme.category}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Application Theme */}
-            <div className="border-t border-white/5 pt-4">
-              <h4 className="text-xs font-bold text-zinc-450 uppercase tracking-wider mb-3">Color Presets</h4>
-              <div className="grid grid-cols-3 gap-1.5">
-                {(['minimal', 'dark', 'cyberpunk', 'gradient', 'devops', 'pastel'] as AppTheme[]).map((theme) => (
-                  <button
-                    key={theme}
-                    onClick={() => {
-                      setActiveTheme(theme);
-                      document.body.setAttribute('data-theme', theme);
-                    }}
-                    className={cn(
-                      'py-2 px-1 text-[10px] rounded-lg border font-semibold uppercase tracking-wider transition-all duration-150 cursor-pointer',
-                      activeTheme === theme
-                        ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-400'
-                        : 'bg-zinc-900/40 border-white/5 text-zinc-450 hover:text-zinc-200'
-                    )}
-                  >
-                    {theme}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Custom Accent Color */}
-            <div className="border-t border-white/5 pt-4">
-              <h4 className="text-xs font-bold text-zinc-450 uppercase tracking-wider mb-2 flex justify-between items-center">
-                <span>Custom Accent Color</span>
-                <span className="text-[10px] font-mono text-zinc-550 uppercase">{accentColor}</span>
-              </h4>
-              <div className="flex gap-3 items-center">
-                <input
-                  type="color"
-                  value={accentColor}
-                  onChange={(e) => setAccentColor(e.target.value)}
-                  className="w-10 h-10 border-0 bg-transparent cursor-pointer shrink-0"
-                />
-                <div className="flex flex-wrap gap-1.5">
-                  {['#3b82f6', '#ff007f', '#8b5cf6', '#f97316', '#c084fc', '#fafafa'].map((color) => (
-                    <button
-                      key={color}
-                      style={{ backgroundColor: color }}
-                      onClick={() => setAccentColor(color)}
-                      className="w-5 h-5 rounded-full border border-white/10 shrink-0 hover:scale-110 transition-transform cursor-pointer"
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Font Selector */}
-            <div className="border-t border-white/5 pt-4">
-              <h4 className="text-xs font-bold text-zinc-450 uppercase tracking-wider mb-3">Typography Font</h4>
-              <div className="grid grid-cols-2 gap-1.5">
-                {(['sans', 'serif', 'mono', 'display'] as FontStyle[]).map((font) => (
-                  <button
-                    key={font}
-                    onClick={() => setFontStyle(font)}
-                    className={cn(
-                      'py-2 px-1 text-[10px] rounded-lg border font-semibold uppercase tracking-wider transition-all duration-150 cursor-pointer',
-                      fontStyle === font
-                        ? 'bg-zinc-100 text-black border-zinc-100'
-                        : 'bg-zinc-900/40 border-white/5 text-zinc-400 hover:text-zinc-200'
-                    )}
-                  >
-                    {font}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Banner Header Image Settings */}
-            <div className="border-t border-white/5 pt-4">
-              <div className="flex justify-between items-center py-1.5">
+            {/* Active Theme Customizer */}
+            {selectedThemeId && (
+              <div className="border-t border-white/5 pt-4 space-y-4">
                 <h4 className="text-xs font-bold text-zinc-450 uppercase tracking-wider flex items-center gap-1.5">
-                  <ImageIcon className="h-3.5 w-3.5 text-indigo-400" />
-                  <span>Show Profile Cover</span>
+                  <Sliders className="h-3.5 w-3.5 text-indigo-400" />
+                  <span>Customize Active Theme</span>
                 </h4>
-                <input
-                  type="checkbox"
-                  checked={showBanners}
-                  onChange={(e) => setShowBanners(e.target.checked)}
-                  className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-indigo-500 focus:ring-indigo-500/20 cursor-pointer"
-                />
-              </div>
 
-              {showBanners && (
-                <div className="space-y-3 pt-2">
+                {/* Custom Title & Tagline */}
+                <div className="space-y-3">
                   <div>
-                    <label className="block text-[10px] font-semibold text-zinc-400 mb-1">Cover Image URL</label>
+                    <label className="block text-[10px] font-semibold text-zinc-400 mb-1">Custom Title</label>
                     <DebouncedInput
                       type="text"
-                      value={bannerImage}
-                      onDebounce={(val) => setBannerImage(val)}
-                      className="w-full px-3 py-2 bg-zinc-900 border border-white/5 rounded-lg text-xs text-zinc-200 font-mono focus:outline-none"
+                      value={themeCustomization.customTitle || ''}
+                      onDebounce={(val) => setThemeCustomization({ customTitle: val || undefined })}
+                      placeholder="Custom Title"
+                      className="w-full px-3 py-1.5 bg-zinc-900 border border-white/5 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-indigo-500/50"
                     />
                   </div>
-                  <div className="flex gap-2">
-                    {BANNER_PRESETS.map((preset) => (
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-zinc-400 mb-1">Custom Tagline</label>
+                    <DebouncedInput
+                      type="text"
+                      value={themeCustomization.customTagline || ''}
+                      onDebounce={(val) => setThemeCustomization({ customTagline: val || undefined })}
+                      placeholder="Custom Tagline"
+                      className="w-full px-3 py-1.5 bg-zinc-900 border border-white/5 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-indigo-500/50"
+                    />
+                  </div>
+                </div>
+
+                {/* Color Palette customization */}
+                <div className="space-y-2.5">
+                  <label className="block text-[10px] font-semibold text-zinc-400">Theme Colors</label>
+                  
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <span className="block text-[8px] font-bold text-zinc-500 mb-1 text-center">PRIMARY</span>
+                      <div className="flex items-center gap-1.5 bg-zinc-900/60 p-1 rounded-lg border border-white/5">
+                        <DebouncedColorInput
+                          value={themeCustomization.primaryColor}
+                          onChange={(val) => setThemeCustomization({ primaryColor: val })}
+                          className="w-5 h-5 border-0 bg-transparent cursor-pointer shrink-0 rounded"
+                        />
+                        <span className="text-[8px] font-mono uppercase text-zinc-400">{themeCustomization.primaryColor.slice(1, 5)}</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="block text-[8px] font-bold text-zinc-500 mb-1 text-center">SECONDARY</span>
+                      <div className="flex items-center gap-1.5 bg-zinc-900/60 p-1 rounded-lg border border-white/5">
+                        <DebouncedColorInput
+                          value={themeCustomization.secondaryColor}
+                          onChange={(val) => setThemeCustomization({ secondaryColor: val })}
+                          className="w-5 h-5 border-0 bg-transparent cursor-pointer shrink-0 rounded"
+                        />
+                        <span className="text-[8px] font-mono uppercase text-zinc-400">{themeCustomization.secondaryColor.slice(1, 5)}</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="block text-[8px] font-bold text-zinc-500 mb-1 text-center">ACCENT</span>
+                      <div className="flex items-center gap-1.5 bg-zinc-900/60 p-1 rounded-lg border border-white/5">
+                        <DebouncedColorInput
+                          value={themeCustomization.accentColor}
+                          onChange={(val) => setThemeCustomization({ accentColor: val })}
+                          className="w-5 h-5 border-0 bg-transparent cursor-pointer shrink-0 rounded"
+                        />
+                        <span className="text-[8px] font-mono uppercase text-zinc-400">{themeCustomization.accentColor.slice(1, 5)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Alignment */}
+                <div>
+                  <label className="block text-[10px] font-semibold text-zinc-400 mb-1.5">Alignment</label>
+                  <div className="flex gap-1 bg-zinc-900/40 p-0.5 border border-white/5 rounded-lg">
+                    <button
+                      onClick={() => setThemeCustomization({ alignment: 'left' })}
+                      className={cn(
+                        "flex-1 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer",
+                        themeCustomization.alignment === 'left' ? "bg-zinc-800 text-white" : "text-zinc-500 hover:text-zinc-350"
+                      )}
+                    >
+                      <AlignLeft className="h-3 w-3" />
+                      <span>Left</span>
+                    </button>
+                    <button
+                      onClick={() => setThemeCustomization({ alignment: 'center' })}
+                      className={cn(
+                        "flex-1 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer",
+                        themeCustomization.alignment === 'center' ? "bg-zinc-800 text-white" : "text-zinc-500 hover:text-zinc-350"
+                      )}
+                    >
+                      <AlignCenter className="h-3 w-3" />
+                      <span>Center</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Emoji Level */}
+                <div>
+                  <label className="block text-[10px] font-semibold text-zinc-400 mb-1.5">Emoji Density</label>
+                  <div className="flex gap-1 bg-zinc-900/40 p-0.5 border border-white/5 rounded-lg">
+                    {(['none', 'minimal', 'heavy'] as const).map((level) => (
                       <button
-                        key={preset.name}
-                        onClick={() => setBannerImage(preset.url)}
+                        key={level}
+                        onClick={() => setThemeCustomization({ emojiLevel: level })}
                         className={cn(
-                          'flex-1 text-[10px] py-1.5 border rounded font-semibold text-center transition-all truncate px-1 cursor-pointer',
-                          bannerImage === preset.url
-                            ? 'border-indigo-500 bg-indigo-500/5 text-indigo-400'
-                            : 'border-white/5 bg-zinc-900 text-zinc-400 hover:text-zinc-250'
+                          "flex-1 py-1 rounded-md text-[8px] font-bold uppercase tracking-wider cursor-pointer",
+                          themeCustomization.emojiLevel === level ? "bg-zinc-800 text-white" : "text-zinc-550 hover:text-zinc-350"
                         )}
-                        title={preset.name}
                       >
-                        {preset.name}
+                        {level}
                       </button>
                     ))}
                   </div>
                 </div>
-              )}
-            </div>
 
-            {/* Canvas & Card Style Customizer */}
+                {/* Feature Toggles */}
+                <div className="space-y-2 border-t border-white/5 pt-3">
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-[10px] font-semibold text-zinc-400">Typing Animation</span>
+                    <input
+                      type="checkbox"
+                      checked={themeCustomization.showTypingAnimation}
+                      onChange={(e) => setThemeCustomization({ showTypingAnimation: e.target.checked })}
+                      className="h-3.5 w-3.5 rounded border-zinc-700 bg-zinc-900 text-indigo-500 cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-[10px] font-semibold text-zinc-400">Contribution Graph</span>
+                    <input
+                      type="checkbox"
+                      checked={themeCustomization.showContributionGraph}
+                      onChange={(e) => setThemeCustomization({ showContributionGraph: e.target.checked })}
+                      className="h-3.5 w-3.5 rounded border-zinc-700 bg-zinc-900 text-indigo-500 cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-[10px] font-semibold text-zinc-400">Trophies</span>
+                    <input
+                      type="checkbox"
+                      checked={themeCustomization.showTrophies}
+                      onChange={(e) => setThemeCustomization({ showTrophies: e.target.checked })}
+                      className="h-3.5 w-3.5 rounded border-zinc-700 bg-zinc-900 text-indigo-500 cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-[10px] font-semibold text-zinc-400">Random Dev Quote</span>
+                    <input
+                      type="checkbox"
+                      checked={themeCustomization.showQuote}
+                      onChange={(e) => setThemeCustomization({ showQuote: e.target.checked })}
+                      className="h-3.5 w-3.5 rounded border-zinc-700 bg-zinc-900 text-indigo-500 cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-[10px] font-semibold text-zinc-400">Visitor Counter</span>
+                    <input
+                      type="checkbox"
+                      checked={themeCustomization.showVisitorCounter}
+                      onChange={(e) => setThemeCustomization({ showVisitorCounter: e.target.checked })}
+                      className="h-3.5 w-3.5 rounded border-zinc-700 bg-zinc-900 text-indigo-500 cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-[10px] font-semibold text-zinc-400">Snake Animation</span>
+                    <input
+                      type="checkbox"
+                      checked={themeCustomization.showSnakeAnimation}
+                      onChange={(e) => setThemeCustomization({ showSnakeAnimation: e.target.checked })}
+                      className="h-3.5 w-3.5 rounded border-zinc-700 bg-zinc-900 text-indigo-500 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Custom Canvas Styling (background/card styling options) */}
             <div className="border-t border-white/5 pt-4 space-y-3.5">
               <h4 className="text-xs font-bold text-zinc-450 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 <Sliders className="h-3.5 w-3.5 text-indigo-400" />
-                <span>Canvas & Card Styles</span>
+                <span>Canvas Styles</span>
               </h4>
 
               {/* Canvas Background Presets */}
@@ -1812,92 +1929,19 @@ export default function Inspector() {
                 </div>
                 {/* Custom Color Input */}
                 <div className="flex gap-2 items-center">
-                  <input 
-                    type="color"
+                  <DebouncedColorInput 
                     value={canvasBgColor.startsWith('#') ? canvasBgColor : '#0d1117'}
-                    onChange={(e) => setCanvasBgColor(e.target.value)}
+                    onChange={(val) => setCanvasBgColor(val)}
                     className="w-6 h-6 border-0 bg-transparent rounded cursor-pointer shrink-0"
                   />
-                  <input
+                  <DebouncedInput
                     type="text"
                     value={canvasBgColor}
-                    onChange={(e) => setCanvasBgColor(e.target.value)}
+                    onDebounce={(val) => setCanvasBgColor(val)}
                     className="flex-1 px-3 py-1 bg-zinc-900 border border-white/5 rounded-lg text-[10px] font-mono text-zinc-250 focus:outline-none"
                     placeholder="#hex color"
                   />
                 </div>
-              </div>
-
-              {/* Card Color settings */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-[10px] font-semibold text-zinc-400 mb-1">Card Background</label>
-                  <div className="flex gap-1.5 items-center">
-                    <input 
-                      type="color"
-                      value={cardBgColor.startsWith('#') ? cardBgColor : '#0d0c1d'}
-                      onChange={(e) => setCardBgColor(e.target.value)}
-                      className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0"
-                    />
-                    <input
-                      type="text"
-                      value={cardBgColor}
-                      onChange={(e) => setCardBgColor(e.target.value)}
-                      className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-lg text-[9px] font-mono text-zinc-250 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-semibold text-zinc-400 mb-1">Card Border</label>
-                  <div className="flex gap-1.5 items-center">
-                    <input 
-                      type="color"
-                      value={cardBorderColor.startsWith('#') ? cardBorderColor : '#27272a'}
-                      onChange={(e) => setCardBorderColor(e.target.value)}
-                      className="w-5 h-5 border-0 bg-transparent rounded cursor-pointer shrink-0"
-                    />
-                    <input
-                      type="text"
-                      value={cardBorderColor}
-                      onChange={(e) => setCardBorderColor(e.target.value)}
-                      className="w-full px-2 py-1 bg-zinc-900 border border-white/5 rounded-lg text-[9px] font-mono text-zinc-250 focus:outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Card Opacity slider */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-[10px] text-zinc-450">
-                  <span className="font-semibold">Card Opacity</span>
-                  <span className="font-mono text-indigo-400">{Math.round(cardBgOpacity * 100)}%</span>
-                </div>
-                <input 
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={cardBgOpacity}
-                  onChange={(e) => setCardBgOpacity(parseFloat(e.target.value))}
-                  className="w-full h-1 bg-zinc-900 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                />
-              </div>
-            </div>
-
-            {/* Emoji Settings */}
-            <div className="border-t border-white/5 pt-4">
-              <div className="flex justify-between items-center py-1">
-                <h4 className="text-xs font-bold text-zinc-450 uppercase tracking-wider flex items-center gap-1.5">
-                  <Smile className="h-3.5 w-3.5 text-indigo-400" />
-                  <span>Display Emojis</span>
-                </h4>
-                <input
-                  type="checkbox"
-                  checked={showEmojis}
-                  onChange={(e) => setShowEmojis(e.target.checked)}
-                  className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-indigo-500 focus:ring-indigo-500/20 cursor-pointer"
-                />
               </div>
             </div>
           </div>

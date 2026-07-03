@@ -1,26 +1,47 @@
-import { 
-  SectionType, 
-  AppTheme, 
-  ReadmeStyle, 
-  FontStyle, 
-  BuilderSection, 
-  SectionConfig 
+import {
+  SectionType,
+  AppTheme,
+  ReadmeStyle,
+  FontStyle,
+  BuilderSection,
+  SectionConfig
 } from '@/types/github.types';
+import { THEME_LIST } from '@/themes';
 
 export interface TemplateConfig {
   id: string;
   title: string;
   description: string;
-  icon: string; // Dynamic icon identifier, e.g., 'Cpu', 'Layout', 'Sparkles', 'GraduationCap', 'Layers', 'CloudLightning'
+  icon: string;
   theme: AppTheme;
   accentColor: string;
   readmeStyle: ReadmeStyle;
   fontStyle: FontStyle;
-  enabledSections: SectionType[]; // Defines visible sections and their precise order
+  enabledSections: SectionType[];
   sectionsConfig: Partial<SectionConfig>;
+  isLegacy?: boolean;
 }
 
-export const TEMPLATES: TemplateConfig[] = [
+// New theme-based templates derived from the theme registry
+export const THEME_TEMPLATES: TemplateConfig[] = THEME_LIST.map(def => ({
+  id: def.id,
+  title: def.name,
+  description: def.description,
+  icon: def.icon,
+  theme: def.id as AppTheme,
+  accentColor: def.defaultConfig.primaryColor,
+  readmeStyle: 'professional' as ReadmeStyle,
+  fontStyle: 'sans' as FontStyle,
+  enabledSections: ['header', 'about', 'skills', 'stats', 'streak', 'projects', 'socials'] as SectionType[],
+  sectionsConfig: {
+    stats: { theme: def.statsTheme, hideBorder: true, showIcons: true, includeAllCommits: true },
+    streak: { theme: def.statsTheme, hideBorder: true },
+    languages: { theme: def.statsTheme, hideBorder: true, langsCount: 6 },
+  },
+}));
+
+// Legacy templates for backward compatibility
+export const LEGACY_TEMPLATES: TemplateConfig[] = [
   {
     id: 'fullstack',
     title: 'Full Stack Pro',
@@ -32,253 +53,13 @@ export const TEMPLATES: TemplateConfig[] = [
     fontStyle: 'sans',
     enabledSections: ['header', 'about', 'skills', 'stats', 'streak', 'projects', 'socials'],
     sectionsConfig: {
-      stats: {
-        theme: 'github_dark',
-        variant: 'classic',
-        hideBorder: false,
-        showIcons: true,
-        showLabels: true,
-        includeAllCommits: true,
-        showIconDecorators: true,
-        compactMode: false,
-      },
-      streak: {
-        theme: 'github_dark',
-        variant: 'classic',
-        hideBorder: false,
-        showFireIcon: true,
-        showDateRanges: true,
-        flameStyle: 'fire',
-      },
-      languages: {
-        theme: 'github_dark',
-        variant: 'classic',
-        hideBorder: false,
-        langsCount: 6,
-        hideProgress: false,
-        showPercentages: true,
-      },
+      stats: { theme: 'github_dark', hideBorder: false, showIcons: true, includeAllCommits: true },
+      streak: { theme: 'github_dark', hideBorder: false },
+      languages: { theme: 'github_dark', hideBorder: false, langsCount: 6 },
     },
-  },
-  {
-    id: 'minimal',
-    title: 'Minimal Dev',
-    description: 'A clean, typography-focused layout containing just a header, bio description, selected skills, and contact links.',
-    icon: 'Layout',
-    theme: 'minimal',
-    accentColor: '#fafafa',
-    readmeStyle: 'minimal',
-    fontStyle: 'sans',
-    enabledSections: ['header', 'about', 'skills', 'socials'],
-    sectionsConfig: {
-      stats: {
-        theme: 'neutral',
-        variant: 'horizontal',
-        hideBorder: true,
-        showIcons: true,
-        showLabels: true,
-        includeAllCommits: false,
-        showIconDecorators: false,
-        compactMode: true,
-        hideRank: true,
-      },
-      streak: {
-        theme: 'neutral',
-        variant: 'compact',
-        hideBorder: true,
-        showFireIcon: false,
-        showDateRanges: false,
-      },
-      languages: {
-        theme: 'neutral',
-        variant: 'list',
-        hideBorder: true,
-        langsCount: 4,
-        hideProgress: true,
-        showPercentages: true,
-      },
-    },
-  },
-  {
-    id: 'opensource',
-    title: 'Open Source Contributor',
-    description: 'Showcase your commits. Focuses heavily on trophy badges, streaks, languages, and repo statistics.',
-    icon: 'Sparkles',
-    theme: 'gradient',
-    accentColor: '#8b5cf6',
-    readmeStyle: 'bold',
-    fontStyle: 'sans',
-    enabledSections: ['header', 'stats', 'streak', 'trophies', 'projects', 'socials'],
-    sectionsConfig: {
-      stats: {
-        theme: 'radical',
-        variant: 'dashboard',
-        hideBorder: false,
-        showIcons: true,
-        showLabels: true,
-        includeAllCommits: true,
-        showIconDecorators: true,
-        compactMode: false,
-      },
-      streak: {
-        theme: 'radical',
-        variant: 'graph',
-        hideBorder: false,
-        showFireIcon: true,
-        showDateRanges: true,
-        flameStyle: 'star',
-      },
-      languages: {
-        theme: 'radical',
-        variant: 'grid',
-        hideBorder: false,
-        langsCount: 5,
-        hideProgress: false,
-        showPercentages: true,
-      },
-      trophies: {
-        theme: 'radical',
-        variant: 'ribbon',
-        columnCount: 3,
-        noBg: false,
-        noFrame: false,
-        showProgress: true,
-        showNextRank: true,
-      },
-    },
-  },
-  {
-    id: 'student',
-    title: 'Student / Learner',
-    description: 'Highlights study goals. Perfect for showing current topics, education achievements, and quotes.',
-    icon: 'GraduationCap',
-    theme: 'pastel',
-    accentColor: '#c084fc',
-    readmeStyle: 'elegant',
-    fontStyle: 'serif',
-    enabledSections: ['header', 'about', 'skills', 'visitor-counter', 'quote', 'socials'],
-    sectionsConfig: {
-      stats: {
-        theme: 'catppuccin_mocha',
-        variant: 'classic',
-        hideBorder: false,
-        showIcons: true,
-        showLabels: true,
-        includeAllCommits: false,
-        showIconDecorators: false,
-        compactMode: true,
-      },
-      streak: {
-        theme: 'catppuccin_mocha',
-        variant: 'vertical',
-        hideBorder: false,
-        showFireIcon: true,
-        showDateRanges: true,
-        flameStyle: 'star',
-      },
-      languages: {
-        theme: 'catppuccin_mocha',
-        variant: 'waffle',
-        hideBorder: false,
-        langsCount: 5,
-        hideProgress: false,
-        showPercentages: true,
-      },
-      trophies: {
-        theme: 'catppuccin_mocha',
-        variant: 'minimal',
-        columnCount: 3,
-        noBg: true,
-        noFrame: true,
-        showProgress: false,
-      },
-    },
-  },
-  {
-    id: 'creative',
-    title: 'Creative Developer',
-    description: 'Stands out visually. Employs animated typing badges, custom details, quotes, and layouts.',
-    icon: 'Layers',
-    theme: 'cyberpunk',
-    accentColor: '#ff007f',
-    readmeStyle: 'creative',
-    fontStyle: 'display',
-    enabledSections: ['typing', 'header', 'about', 'skills', 'quote', 'custom', 'socials'],
-    sectionsConfig: {
-      stats: {
-        theme: 'cyberpunk',
-        variant: 'grid',
-        hideBorder: false,
-        showIcons: true,
-        showLabels: true,
-        includeAllCommits: true,
-        showIconDecorators: true,
-        compactMode: false,
-      },
-      streak: {
-        theme: 'cyberpunk',
-        variant: 'neon',
-        hideBorder: false,
-        showFireIcon: true,
-        showDateRanges: true,
-        flameStyle: 'lightning',
-      },
-      languages: {
-        theme: 'cyberpunk',
-        variant: 'cloud',
-        hideBorder: false,
-        langsCount: 8,
-        hideProgress: true,
-        showPercentages: true,
-      },
-      trophies: {
-        theme: 'cyberpunk',
-        variant: 'podium',
-        columnCount: 3,
-        noBg: false,
-        noFrame: false,
-        showProgress: true,
-      },
-    },
-  },
-  {
-    id: 'devops',
-    title: 'DevOps / Cloud',
-    description: 'Infrastructure layout. Showcases pipeline certifications, system toolkits, stats, and badges.',
-    icon: 'CloudLightning',
-    theme: 'devops',
-    accentColor: '#f97316',
-    readmeStyle: 'hacker',
-    fontStyle: 'mono',
-    enabledSections: ['header', 'about', 'skills', 'stats', 'streak', 'socials'],
-    sectionsConfig: {
-      skills: {
-        selectedSkills: ['Git', 'Docker', 'Kubernetes', 'AWS', 'Linux', 'GitHub Actions', 'Shell', 'Go'],
-        badgeStyle: 'flat',
-        badgeColor: 'f97316',
-      },
-      stats: {
-        theme: 'gruvbox',
-        variant: 'terminal',
-        hideBorder: false,
-        showIcons: true,
-        showLabels: true,
-        includeAllCommits: true,
-        compactMode: false,
-      },
-      streak: {
-        theme: 'gruvbox',
-        variant: 'compact',
-        hideBorder: false,
-        showFireIcon: true,
-        flameStyle: 'fire',
-      },
-      languages: {
-        theme: 'gruvbox',
-        variant: 'grid',
-        hideBorder: false,
-        langsCount: 5,
-      },
-    },
+    isLegacy: true,
   },
 ];
+
+// Export the new theme-based templates as default
+export const TEMPLATES = THEME_TEMPLATES;

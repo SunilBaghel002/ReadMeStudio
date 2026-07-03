@@ -19,6 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useBuilderStore } from '@/store/useBuilderStore';
+import { useShallow } from 'zustand/react/shallow';
 import { BuilderSection, SectionType } from '@/types/github.types';
 import {
   GripVertical,
@@ -78,7 +79,7 @@ interface SortableItemProps {
   isLast: boolean;
 }
 
-function SortableSectionItem({ 
+const SortableSectionItem = React.memo(function SortableSectionItem({ 
   section, 
   isSelected, 
   onSelect, 
@@ -210,24 +211,23 @@ function SortableSectionItem({
       </div>
     </div>
   );
-}
+});
+SortableSectionItem.displayName = 'SortableSectionItem';
 
 // Main Panel Component
 export default function SectionList() {
-  const {
-    sections,
-    setSections,
-    toggleSectionVisibility,
-    selectedSectionId,
-    setSelectedSectionId,
-    addCustomSection,
-    deleteSection,
-  } = useBuilderStore();
+  const sections = useBuilderStore(useShallow((state) => state.sections));
+  const setSections = useBuilderStore((state) => state.setSections);
+  const toggleSectionVisibility = useBuilderStore((state) => state.toggleSectionVisibility);
+  const selectedSectionId = useBuilderStore((state) => state.selectedSectionId);
+  const setSelectedSectionId = useBuilderStore((state) => state.setSelectedSectionId);
+  const addCustomSection = useBuilderStore((state) => state.addCustomSection);
+  const deleteSection = useBuilderStore((state) => state.deleteSection);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 5,
       },
     }),
     useSensor(KeyboardSensor, {

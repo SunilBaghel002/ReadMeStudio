@@ -109,13 +109,17 @@ export async function fetchGitHubData(username: string): Promise<ExtendedGitHubD
 
   // 2. Fetch GraphQL data (with ContributedTo, PR reviews, and isFork repo flag, without heavy nested default branch commits traversal)
   const graphqlQuery = `
-    query($username: String!) {
+    query($username: String!, $cursor: String) {
       user(login: $username) {
         id
         repositoriesContributedTo(contributionTypes: [COMMIT, ISSUE, PULL_REQUEST, PULL_REQUEST_REVIEW]) {
           totalCount
         }
-        repositories(ownerAffiliations: OWNER, first: 100) {
+        repositories(ownerAffiliations: OWNER, first: 100, after: $cursor) {
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
           nodes {
             name
             isFork
@@ -155,35 +159,50 @@ export async function fetchGitHubData(username: string): Promise<ExtendedGitHubD
   let userObj: any = null;
   let reposNodes: any[] = [];
   let graphQLSuccess = false;
+  let cursor: string | null = null;
+  let hasNextPage = true;
 
   try {
-    const graphRes = await fetch('https://api.github.com/graphql', {
-      method: 'POST',
-      headers: {
-        Authorization: `bearer ${token}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({
-        query: graphqlQuery,
-        variables: { username: rawProfile.login },
-      }),
-      next: { revalidate: 3600 },
-    });
+    while (hasNextPage) {
+      const graphRes: Response = await fetch('https://api.github.com/graphql', {
+        method: 'POST',
+        headers: {
+          Authorization: `bearer ${token}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          query: graphqlQuery,
+          variables: { username: rawProfile.login, cursor },
+        }),
+        next: { revalidate: 3600 },
+      });
 
-    if (graphRes.ok) {
-      const graphJson = await graphRes.json();
-      if (!graphJson.errors) {
-        userObj = graphJson.data?.user;
-        if (userObj) {
-          reposNodes = userObj.repositories?.nodes || [];
-          graphQLSuccess = true;
+      if (graphRes.ok) {
+        const graphJson: any = await graphRes.json();
+        if (!graphJson.errors) {
+          const pageUserObj: any = graphJson.data?.user;
+          if (pageUserObj) {
+            if (!userObj) {
+              userObj = pageUserObj;
+            }
+            const nodes = pageUserObj.repositories?.nodes || [];
+            reposNodes.push(...nodes);
+            
+            hasNextPage = pageUserObj.repositories?.pageInfo?.hasNextPage || false;
+            cursor = pageUserObj.repositories?.pageInfo?.endCursor || null;
+            graphQLSuccess = true;
+          } else {
+            break;
+          }
+        } else {
+          console.warn(`[GitHub Fetcher] GraphQL query errors:`, graphJson.errors);
+          break;
         }
       } else {
-        console.warn(`[GitHub Fetcher] GraphQL query errors:`, graphJson.errors);
+        console.warn(`[GitHub Fetcher] GraphQL status failed: ${graphRes.status} ${graphRes.statusText}`);
+        break;
       }
-    } else {
-      console.warn(`[GitHub Fetcher] GraphQL status failed: ${graphRes.status} ${graphRes.statusText}`);
     }
   } catch (err: any) {
     console.warn(`[GitHub Fetcher] GraphQL network/Bad Gateway failed: ${err.message}. Running REST fallback...`);
@@ -192,14 +211,21 @@ export async function fetchGitHubData(username: string): Promise<ExtendedGitHubD
   if (!graphQLSuccess) {
     try {
       console.log(`[GitHub Fetcher] Fetching fallback repos via REST for: ${username}`);
-      const reposRes = await fetch(`https://api.github.com/users/${username}/repos?per_page=100`, { 
-        headers, 
-        next: { revalidate: 3600 } 
-      });
-      if (!reposRes.ok) {
-        throw new Error(`REST repositories query failed with status: ${reposRes.status}`);
+      let page = 1;
+      let rawRepos: any[] = [];
+      while (true) {
+        const reposRes = await fetch(`https://api.github.com/users/${username}/repos?per_page=100&page=${page}`, { 
+          headers, 
+          next: { revalidate: 3600 } 
+        });
+        if (!reposRes.ok) {
+          throw new Error(`REST repositories query failed with status: ${reposRes.status}`);
+        }
+        const pageData = await reposRes.json();
+        rawRepos.push(...pageData);
+        if (pageData.length < 100) break;
+        page++;
       }
-      const rawRepos = await reposRes.json();
       
       reposNodes = rawRepos.map((r: any) => ({
         name: r.name,

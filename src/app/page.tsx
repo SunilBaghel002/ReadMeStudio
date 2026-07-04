@@ -2,6 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useBuilderStore } from '@/store/useBuilderStore';
+import { useShallow } from 'zustand/react/shallow';
 import { motion } from 'framer-motion';
 import { FaGithub } from 'react-icons/fa';
 import {
@@ -20,6 +23,21 @@ import {
 import WebGLBackground from '@/components/UI/WebGLBackground';
 
 export default function LandingPage() {
+  const router = useRouter();
+  const { githubData, username, resetStore, hasHydrated } = useBuilderStore(useShallow(state => ({
+    githubData: state.githubData,
+    username: state.username,
+    resetStore: state.resetStore,
+    hasHydrated: state.hasHydrated
+  })));
+
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const showWelcomeBack = mounted && hasHydrated && githubData && username;
+
   return (
     <div className="relative min-h-screen bg-[#15121b] text-[#e8dfee] flex flex-col justify-between overflow-x-hidden font-sans antialiased bg-mesh-texture selection:bg-indigo-500/30 selection:text-white">
       {/* Noise Overlay */}
@@ -43,21 +61,21 @@ export default function LandingPage() {
           {/* Nav Links (Desktop) */}
           <div className="hidden md:flex gap-8 items-center text-xs font-semibold text-zinc-400">
             <a href="#features" className="hover:text-white transition-colors duration-200">Features</a>
-            <a href="#templates" className="hover:text-white transition-colors duration-200">Templates</a>
+            <Link href={showWelcomeBack ? "/themes" : "/generate"} className="hover:text-white transition-colors duration-200">Themes</Link>
             <a href="#how-it-works" className="hover:text-white transition-colors duration-200">How it Works</a>
             <a href="#examples" className="hover:text-white transition-colors duration-200">Examples</a>
           </div>
 
           {/* Actions */}
           <div className="flex items-center gap-4">
-            <Link href="/templates" className="text-xs font-semibold text-zinc-400 hover:text-white transition-colors duration-200 hidden sm:block">
-              Log in
+            <Link href={showWelcomeBack ? "/builder" : "/generate"} className="text-xs font-semibold text-zinc-400 hover:text-white transition-colors duration-200 hidden sm:block">
+              {showWelcomeBack ? "Dashboard" : "Log in"}
             </Link>
             <Link
-              href="/templates"
+              href={showWelcomeBack ? "/builder" : "/generate"}
               className="bg-gradient-to-r from-indigo-400 to-[#7c3aed] text-white px-5 py-2.5 rounded-lg text-xs font-bold btn-glow transition-all hover:scale-[1.02]"
             >
-              Get Started Free
+              {showWelcomeBack ? "Continue Building" : "Get Started Free"}
             </Link>
           </div>
         </div>
@@ -101,27 +119,56 @@ export default function LandingPage() {
             The most accurate and beautifully designed GitHub README generator. Fetch real stats, customize freely, and export in seconds.
           </motion.p>
 
-          {/* CTA Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8 w-full sm:w-auto"
-          >
-            <Link
-              href="/templates"
-              className="w-full sm:w-auto bg-gradient-to-r from-indigo-400 to-[#7c3aed] text-white px-8 py-3.5 rounded-lg text-xs font-bold btn-glow flex items-center justify-center gap-2 hover:scale-[1.02]"
+          {/* CTA Buttons / Welcome Back */}
+          {showWelcomeBack ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="mb-8 p-6 rounded-2xl border border-indigo-500/30 bg-indigo-500/5 backdrop-blur-md max-w-md w-full mx-auto text-center"
+              style={{ boxShadow: '0 0 30px rgba(124, 58, 237, 0.15)' }}
             >
-              <span>Generate My README</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <a
-              href="#features"
-              className="w-full sm:w-auto px-8 py-3.5 rounded-lg border border-zinc-700 hover:border-zinc-500 hover:bg-zinc-800/20 text-[#e8dfee] text-xs font-bold text-center transition-all"
+              <p className="text-sm font-semibold text-white mb-4">Welcome back! Continue building?</p>
+              <div className="flex flex-col sm:flex-row justify-center gap-3 w-full">
+                <Link
+                  href="/builder"
+                  className="w-full sm:w-auto bg-gradient-to-r from-indigo-400 to-[#7c3aed] text-white px-5 py-3 rounded-lg text-xs font-bold btn-glow transition-all hover:scale-[1.02] flex items-center justify-center gap-1.5"
+                >
+                  <span>Continue with @{username}</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+                <button
+                  onClick={() => {
+                    resetStore();
+                    router.push('/generate');
+                  }}
+                  className="w-full sm:w-auto px-5 py-3 rounded-lg border border-zinc-700 hover:border-zinc-500 hover:bg-zinc-800/20 text-zinc-350 text-xs font-bold transition-all cursor-pointer"
+                >
+                  Start Fresh
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8 w-full sm:w-auto"
             >
-              View Templates
-            </a>
-          </motion.div>
+              <Link
+                href="/generate"
+                className="w-full sm:w-auto bg-gradient-to-r from-indigo-400 to-[#7c3aed] text-white px-8 py-3.5 rounded-lg text-xs font-bold btn-glow flex items-center justify-center gap-2 hover:scale-[1.02]"
+              >
+                <span>Get Started →</span>
+              </Link>
+              <Link
+                href="/generate"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-lg border border-zinc-750 hover:border-zinc-500 hover:bg-zinc-800/20 text-[#e8dfee] text-xs font-bold text-center transition-all"
+              >
+                Browse Templates
+              </Link>
+            </motion.div>
+          )}
 
           {/* Trust Indicators */}
           <motion.div
@@ -305,10 +352,10 @@ export default function LandingPage() {
               Join thousands of developers who have leveled up their GitHub profiles.
             </p>
             <Link
-              href="/templates"
+              href={showWelcomeBack ? "/builder" : "/generate"}
               className="inline-block bg-gradient-to-r from-indigo-400 to-[#7c3aed] text-white px-10 py-4 rounded-lg text-sm font-bold uppercase tracking-wider btn-glow hover:scale-[1.02]"
             >
-              Generate My README Now
+              {showWelcomeBack ? "Go to your Builder" : "Generate My README Now"}
             </Link>
           </div>
         </section>
@@ -333,7 +380,7 @@ export default function LandingPage() {
             <h4 className="text-[10px] font-bold uppercase tracking-wider text-white mb-4">Product</h4>
             <ul className="space-y-2.5 text-xs text-zinc-400">
               <li><Link href="#features" className="hover:text-white transition-colors">Features</Link></li>
-              <li><Link href="#templates" className="hover:text-white transition-colors">Templates</Link></li>
+              <li><Link href={showWelcomeBack ? "/themes" : "/generate"} className="hover:text-white transition-colors">Themes</Link></li>
               <li><Link href="#" className="hover:text-white transition-colors">Pricing</Link></li>
             </ul>
           </div>

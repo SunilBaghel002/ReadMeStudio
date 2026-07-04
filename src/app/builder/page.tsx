@@ -12,6 +12,7 @@ const Inspector = dynamic(() => import('@/components/Builder/Inspector'), { ssr:
 const ExportModal = dynamic(() => import('@/components/Preview/ExportModal'), { ssr: false });
 const TemplateSelectorModal = dynamic(() => import('@/components/Preview/TemplateSelectorModal'), { ssr: false });
 import Link from 'next/link';
+import FlowProgress from '@/components/UI/FlowProgress';
 import { 
   Layout, 
   ChevronLeft, 
@@ -69,10 +70,14 @@ export default function BuilderPage() {
 
   // Redirect to generate onboarding page if no GitHub data exists, but ONLY after hydration completes
   useEffect(() => {
-    if (hasHydrated && (!githubData || !username)) {
-      router.push('/generate');
+    if (hasHydrated) {
+      if (!githubData || !username) {
+        router.push('/generate');
+      } else if (!selectedThemeId) {
+        router.push('/themes');
+      }
     }
-  }, [hasHydrated, githubData, username, router]);
+  }, [hasHydrated, githubData, username, selectedThemeId, router]);
 
   // Compute markdown output using the theme-based generator
   const getLatestMarkdown = async () => {
@@ -87,8 +92,10 @@ export default function BuilderPage() {
   };
 
   const handleSwitchProfile = () => {
-    resetStore();
-    router.push('/generate');
+    if (window.confirm("Changing user will reset customizations. Continue?")) {
+      resetStore();
+      router.push('/generate');
+    }
   };
 
   const handleCopy = async () => {
@@ -148,20 +155,25 @@ export default function BuilderPage() {
           </div>
         </div>
 
+        {/* Compact Onboarding Flow Steps */}
+        <div className="hidden lg:flex items-center justify-center flex-1 max-w-sm">
+          <FlowProgress currentStep="builder" compact />
+        </div>
+
         {/* Action button controls */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsTemplateModalOpen(true)}
+          <Link
+            href="/themes"
             className="text-[10px] uppercase tracking-wider text-zinc-350 hover:text-white font-bold px-3 py-2 border border-[#7c3aed]/20 bg-[#7c3aed]/5 hover:bg-[#7c3aed]/10 rounded-lg mr-2 transition-all cursor-pointer hidden sm:flex items-center gap-1.5"
           >
             <Layout className="h-3.5 w-3.5 text-indigo-400" />
-            <span>Templates</span>
-          </button>
+            <span>Change Theme</span>
+          </Link>
           <button
             onClick={handleSwitchProfile}
             className="text-[10px] uppercase tracking-wider text-zinc-500 hover:text-zinc-350 font-bold px-3 py-2 border border-white/5 rounded-lg mr-2 transition-colors cursor-pointer hidden sm:block"
           >
-            Switch User
+            Change Username
           </button>
           <button
             onClick={handleOpenExport}

@@ -31,7 +31,7 @@ import {
 } from './CustomPreviewCards';
 
 // Memoized ReactMarkdown component for the selector modal preview to prevent lag on hover/scroll
-const ThemePreviewRenderer = React.memo(({
+export const ThemePreviewRenderer = React.memo(({
   markdown,
   username,
   profile,
@@ -126,6 +126,7 @@ interface TemplateSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect?: (templateId: string) => void;
+  initialSelectedThemeId?: string;
 }
 
 const ICON_MAP: Record<string, React.ComponentType<any>> = {
@@ -189,7 +190,7 @@ const MOCK_GITHUB_DATA = {
   ]
 };
 
-export default function TemplateSelectorModal({ isOpen, onClose, onSelect }: TemplateSelectorModalProps) {
+export default function TemplateSelectorModal({ isOpen, onClose, onSelect, initialSelectedThemeId }: TemplateSelectorModalProps) {
   const { 
     username: storeUsername, 
     profile: storeProfile,
@@ -201,8 +202,15 @@ export default function TemplateSelectorModal({ isOpen, onClose, onSelect }: Tem
     sections,
   } = useBuilderStore();
 
-  const [selectedId, setSelectedId] = useState<string>(activeThemeId || THEME_LIST[0].id);
+  const [selectedId, setSelectedId] = useState<string>(initialSelectedThemeId || activeThemeId || THEME_LIST[0].id);
   const [previewMarkdown, setPreviewMarkdown] = useState<string>('');
+
+  // Sync selectedId when modal opens with a specific theme
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedId(initialSelectedThemeId || activeThemeId || THEME_LIST[0].id);
+    }
+  }, [isOpen, initialSelectedThemeId, activeThemeId]);
 
   // Resolve user details (real or mock)
   const username = storeUsername || MOCK_GITHUB_DATA.profile.username;

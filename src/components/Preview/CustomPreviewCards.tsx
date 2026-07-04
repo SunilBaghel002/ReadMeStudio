@@ -729,37 +729,147 @@ export const LanguagesCardPreview = ({ languages }: { languages: LanguageStat[] 
 const TrophyIcon = ({ rank, color }: { rank: string; color: string }) => {
   const hasCrown = rank === 'SSS';
   const hasGlow = rank === 'S' || rank === 'SS' || rank === 'SSS';
-  const isGradient = color.startsWith('linear-gradient') || color.includes('gradient');
-  const fill = isGradient ? `url(#preview-grad-${rank})` : color;
+  
+  // Resolve unique gradient IDs based on tier for a real 3D metallic feel
+  const getGradientId = (r: string) => {
+    switch (r) {
+      case 'SSS': return 'trophy-grad-sss';
+      case 'SS': return 'trophy-grad-ss';
+      case 'S': return 'trophy-grad-s';
+      case 'A+': return 'trophy-grad-ap';
+      case 'A': return 'trophy-grad-a';
+      case 'B': return 'trophy-grad-b';
+      case 'C': return 'trophy-grad-c';
+      default: return 'trophy-grad-unranked';
+    }
+  };
+
+  const gradId = getGradientId(rank);
+  const glowColor = rank === 'SSS' ? '#ff007f' : rank === 'SS' ? '#ec4899' : rank === 'S' ? '#3b82f6' : color;
 
   return (
-    <svg viewBox="0 0 100 100" className="w-10 h-10 mx-auto drop-shadow-md" style={{ filter: hasGlow ? `drop-shadow(0 0 6px ${isGradient ? '#ec4899' : color}aa)` : 'none' }}>
+    <svg 
+      viewBox="0 0 100 100" 
+      className="w-12 h-12 mx-auto drop-shadow-xl select-none pointer-events-none" 
+      style={{ 
+        filter: hasGlow ? `drop-shadow(0 0 8px ${glowColor}60)` : 'drop-shadow(0 4px 6px rgba(0,0,0,0.35))' 
+      }}
+    >
       <defs>
-        {isGradient && (
-          <linearGradient id={`preview-grad-${rank}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            {rank === 'SSS' ? (
-              <>
-                <stop offset="0%" stopColor="#ff007f" />
-                <stop offset="50%" stopColor="#7f00ff" />
-                <stop offset="100%" stopColor="#00ffff" />
-              </>
-            ) : (
-              <>
-                <stop offset="0%" stopColor="#ec4899" />
-                <stop offset="100%" stopColor="#a855f7" />
-              </>
-            )}
-          </linearGradient>
-        )}
+        {/* SSS Holographic Gradient */}
+        <linearGradient id="trophy-grad-sss" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#ff007f" />
+          <stop offset="35%" stopColor="#7f00ff" />
+          <stop offset="70%" stopColor="#00ffff" />
+          <stop offset="100%" stopColor="#ff007f" />
+        </linearGradient>
+        
+        {/* SS Mythic Gradient */}
+        <linearGradient id="trophy-grad-ss" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#ec4899" />
+          <stop offset="50%" stopColor="#c084fc" />
+          <stop offset="100%" stopColor="#8b5cf6" />
+        </linearGradient>
+        
+        {/* S Diamond Blue Gradient */}
+        <linearGradient id="trophy-grad-s" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#93c5fd" />
+          <stop offset="50%" stopColor="#3b82f6" />
+          <stop offset="100%" stopColor="#1d4ed8" />
+        </linearGradient>
+        
+        {/* A+ Platinum Silver Gradient */}
+        <linearGradient id="trophy-grad-ap" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#f8fafc" />
+          <stop offset="50%" stopColor="#cbd5e1" />
+          <stop offset="100%" stopColor="#475569" />
+        </linearGradient>
+        
+        {/* A Gold Gradient */}
+        <linearGradient id="trophy-grad-a" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#ffe66d" />
+          <stop offset="35%" stopColor="#facc15" />
+          <stop offset="70%" stopColor="#eab308" />
+          <stop offset="100%" stopColor="#a16207" />
+        </linearGradient>
+        
+        {/* B Silver Gradient */}
+        <linearGradient id="trophy-grad-b" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="50%" stopColor="#cbd5e1" />
+          <stop offset="100%" stopColor="#94a3b8" />
+        </linearGradient>
+        
+        {/* C Bronze Gradient */}
+        <linearGradient id="trophy-grad-c" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#fed7aa" />
+          <stop offset="50%" stopColor="#f97316" />
+          <stop offset="100%" stopColor="#ea580c" />
+        </linearGradient>
+        
+        {/* Unranked Gray Gradient */}
+        <linearGradient id="trophy-grad-unranked" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#e4e4e7" />
+          <stop offset="50%" stopColor="#a1a1aa" />
+          <stop offset="100%" stopColor="#52525b" />
+        </linearGradient>
+
+        {/* Base Pedestal Gradient */}
+        <linearGradient id="trophy-pedestal-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#3f3f46" />
+          <stop offset="100%" stopColor="#18181b" />
+        </linearGradient>
       </defs>
+
+      {/* Ground Pedestal Shadow */}
+      <ellipse cx="50" cy="88" rx="20" ry="3.5" fill="black" opacity="0.4" />
+
+      {/* Pedestal Base Block */}
+      <path d="M22 80 L78 80 L74 86 L26 86 Z" fill="url(#trophy-pedestal-grad)" stroke="#18181b" strokeWidth="0.75" />
+      <rect x="30" y="73" width="40" height="7" rx="1.5" fill="url(#trophy-pedestal-grad)" stroke="#18181b" strokeWidth="0.75" />
+
+      {/* Connecting Stem */}
+      <path d="M45 56 L55 56 L53 73 L47 73 Z" fill={`url(#${gradId})`} stroke="rgba(0,0,0,0.15)" strokeWidth="0.5" />
+      <ellipse cx="50" cy="59" rx="7" ry="2" fill={`url(#${gradId})`} stroke="rgba(0,0,0,0.15)" strokeWidth="0.5" />
+
+      {/* Curved Metallic Handles */}
+      {/* Left Handle */}
+      <path d="M30 26 C12 26, 8 46, 30 46" fill="none" stroke={`url(#${gradId})`} strokeWidth="4.5" strokeLinecap="round" />
+      <path d="M30 26 C12 26, 8 46, 30 46" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.25" strokeLinecap="round" />
+      
+      {/* Right Handle */}
+      <path d="M70 26 C88 26, 92 46, 70 46" fill="none" stroke={`url(#${gradId})`} strokeWidth="4.5" strokeLinecap="round" />
+      <path d="M70 26 C88 26, 92 46, 70 46" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.25" strokeLinecap="round" />
+
+      {/* Bowl Outer & Inner Rim */}
+      <path d="M28 20 C28 48, 72 48, 72 20 Z" fill={`url(#${gradId})`} />
+      <ellipse cx="50" cy="20" rx="22" ry="4.5" fill={`url(#${gradId})`} />
+      <ellipse cx="50" cy="20" rx="22" ry="4.5" fill="rgba(0,0,0,0.08)" stroke="rgba(255,255,255,0.2)" strokeWidth="0.75" />
+
+      {/* 3D Glossy Highlights */}
+      <path d="M31 23 C34 36, 42 41, 44 41 C39 36, 34 32, 33 23 Z" fill="rgba(255,255,255,0.2)" />
+      <path d="M69 23 C66 36, 58 41, 56 41 C61 36, 66 32, 67 23 Z" fill="rgba(0,0,0,0.12)" />
+
+      {/* Holographic Crown overlay for SSS */}
       {hasCrown && (
-        <path d="M38 22 L44 30 L50 18 L56 30 L62 22 L60 36 L40 36 Z" fill="#fbbf24" stroke="#d97706" strokeWidth="1" />
+        <g transform="translate(0, -2)">
+          <path d="M38 12 L44 18 L50 7 L56 18 L62 12 L59 23 L41 23 Z" fill="#fbbf24" stroke="#ca8a04" strokeWidth="0.75" />
+          <circle cx="50" cy="6" r="1.25" fill="#fff" />
+          <circle cx="38" cy="11" r="0.75" fill="#fff" />
+          <circle cx="62" cy="11" r="0.75" fill="#fff" />
+        </g>
       )}
-      <path d="M32 38 C32 50, 68 50, 68 38 L63 60 C58 66, 42 66, 37 60 Z" fill={fill} />
-      <path d="M32 40 C24 40, 24 48, 32 50" fill="none" stroke={fill} strokeWidth="3" />
-      <path d="M68 40 C76 40, 76 48, 68 50" fill="none" stroke={fill} strokeWidth="3" />
-      <path d="M48 60 L52 60 L54 75 L46 75 Z" fill={fill} />
-      <rect x="38" y="75" width="24" height="6" rx="2" fill={fill} />
+
+      {/* Embossed Stars for Mythic/Diamond */}
+      {(rank === 'SS' || rank === 'S') && (
+        <path 
+          d="M50 25 L52.5 30.5 L58.5 31.5 L54 35.5 L55.5 41.5 L50 38.5 L44.5 41.5 L46 35.5 L41.5 31.5 L47.5 30.5 Z" 
+          fill={rank === 'SS' ? '#fde047' : '#93c5fa'} 
+          opacity="0.95" 
+          stroke="rgba(0,0,0,0.2)"
+          strokeWidth="0.5"
+        />
+      )}
     </svg>
   );
 };
@@ -945,16 +1055,42 @@ export const TrophiesCardPreview = ({ stats, profile }: { stats: any; profile: a
             Achievements Board
           </span>
         )}
-        <span className={`grid gap-3 block ${columnsClass}`}>
+        <span className={`grid gap-3 ${columnsClass}`}>
           {filteredTrophies.map((tr) => (
-            <span key={tr.id} className={cn("bg-zinc-900/60 border border-white/5 rounded-lg text-center flex flex-col justify-between items-center shadow block hover:scale-105 transition-transform duration-200", compactMode ? "p-2" : "p-4")}>
-              <span className="text-[9px] text-zinc-400 uppercase font-mono mb-1">{tr.id}</span>
+            <span 
+              key={tr.id} 
+              className="bg-zinc-900/60 border border-white/5 rounded-lg text-center flex flex-col justify-between items-center shadow relative hover:scale-105 transition-transform duration-200 p-4 block"
+            >
+              {/* Level Rank Badge placed cleanly in top-right */}
+              <span 
+                className="absolute top-2 right-2 px-1.5 py-0.5 rounded text-[8px] font-black font-mono border leading-none block"
+                style={{ 
+                  borderColor: tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color,
+                  color: tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color,
+                  backgroundColor: `${tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color}15`
+                }}
+              >
+                {tr.rank}
+              </span>
+
+              {/* Title label at top */}
+              <span className="text-[9px] text-zinc-400 uppercase font-mono mb-2 w-full text-center pr-4 truncate select-none block">{tr.id}</span>
+              
+              {/* Real SVG Trophy Icon */}
               <TrophyIcon rank={tr.rank} color={tr.color} />
-              <span className="text-xs font-black font-mono mt-2" style={{ color: tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color }}>{tr.rank}</span>
-              <span className="text-xs font-bold font-mono mt-0.5 text-zinc-350">{tr.value}</span>
+              
+              {/* Level Stats value centered cleanly below */}
+              <span className="text-xs font-black font-mono mt-2 text-white block">{tr.value}</span>
+              
               {showProgress && tr.rank !== 'SSS' && tr.rank !== 'Unranked' && (
-                <span className="w-full bg-white/10 h-1 rounded-full overflow-hidden mt-2.5 block">
-                  <span className="h-full block" style={{ width: `${tr.progress}%`, backgroundColor: tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color }} />
+                <span className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden mt-3 block">
+                  <span 
+                    className="h-full block" 
+                    style={{ 
+                      width: `${tr.progress}%`, 
+                      background: tr.color.startsWith('linear-gradient') ? 'linear-gradient(to right, #ec4899, #a855f7)' : tr.color 
+                    }} 
+                  />
                 </span>
               )}
             </span>
@@ -974,12 +1110,23 @@ export const TrophiesCardPreview = ({ stats, profile }: { stats: any; profile: a
         className="block border p-5 text-white max-w-lg mx-auto my-4 shadow-lg font-sans text-left transition-all duration-300"
       >
         {showCategoryLabels && <span className="block text-sm font-bold mb-4 font-mono" style={{ color: styles.titleColor }}>Achievement Badges</span>}
-        <span className={`grid gap-4 block ${columnsClass} text-center`}>
+        <span className={`grid gap-4 ${columnsClass} text-center`}>
           {filteredTrophies.map((tr) => (
             <span key={tr.id} className="flex flex-col items-center justify-center inline-block">
-              <span className={cn("rounded-full border-2 flex items-center justify-center relative shrink-0 block", compactMode ? "w-10 h-10" : "w-14 h-14")} style={{ borderColor: tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color, backgroundColor: `${tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color}15` }}>
+              <span 
+                className={cn("rounded-full border-2 flex items-center justify-center relative shrink-0 block", compactMode ? "w-10 h-10" : "w-14 h-14")} 
+                style={{ 
+                  borderColor: tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color, 
+                  backgroundColor: `${tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color}15` 
+                }}
+              >
                 <TrophyIcon rank={tr.rank} color={tr.color} />
-                <span className="absolute bottom-[-3px] right-[-3px] bg-black text-white text-[7px] font-black border rounded-md px-1" style={{ borderColor: tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color }}>{tr.rank}</span>
+                <span 
+                  className="absolute bottom-[-3px] right-[-3px] bg-black text-white text-[7px] font-black border rounded-md px-1 block" 
+                  style={{ borderColor: tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color }}
+                >
+                  {tr.rank}
+                </span>
               </span>
               <span className="text-[9px] font-bold mt-2 truncate w-14 block" style={{ color: styles.textColor }}>{tr.id}</span>
             </span>
@@ -998,12 +1145,21 @@ export const TrophiesCardPreview = ({ stats, profile }: { stats: any; profile: a
         {showCategoryLabels && <span className="block text-sm font-bold mb-3 font-mono" style={{ color: styles.titleColor }}>Honorary Ribbons</span>}
         <span className="flex flex-col gap-2.5 block">
           {filteredTrophies.map((tr) => (
-            <span key={tr.id} className="flex items-center justify-between p-2.5 rounded-r-lg border-l-4 block" style={{ borderLeftColor: tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color, backgroundColor: `${tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color}0a` }}>
+            <span 
+              key={tr.id} 
+              className="flex items-center justify-between p-2.5 rounded-r-lg border-l-4 block" 
+              style={{ 
+                borderLeftColor: tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color, 
+                backgroundColor: `${tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color}0a` 
+              }}
+            >
               <span className="flex items-center gap-2">
                 <span className="text-base">🏅</span>
                 <span className="text-xs font-bold font-mono text-white">{tr.id} Achievement Award</span>
               </span>
-              <span className="text-xs font-black font-mono" style={{ color: tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color }}>{tr.rank} ({tr.value})</span>
+              <span className="text-xs font-black font-mono block" style={{ color: tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color }}>
+                {tr.rank} ({tr.value})
+              </span>
             </span>
           ))}
         </span>
@@ -1019,9 +1175,11 @@ export const TrophiesCardPreview = ({ stats, profile }: { stats: any; profile: a
       >
         <span className="grid grid-cols-2 gap-2 block">
           {filteredTrophies.map((tr) => (
-            <span key={tr.id} className="flex justify-between items-center p-2.5 bg-white/5 border border-white/5 rounded-md">
-              <span className="text-xs text-zinc-400 font-mono">{tr.id}</span>
-              <span className="text-xs font-bold font-mono" style={{ color: tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color }}>[{tr.rank}] {tr.value}</span>
+            <span key={tr.id} className="flex justify-between items-center p-2.5 bg-white/5 border border-white/5 rounded-md block">
+              <span className="text-xs text-zinc-400 font-mono block">{tr.id}</span>
+              <span className="text-xs font-bold font-mono block" style={{ color: tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color }}>
+                [{tr.rank}] {tr.value}
+              </span>
             </span>
           ))}
         </span>
@@ -1047,13 +1205,13 @@ export const TrophiesCardPreview = ({ stats, profile }: { stats: any; profile: a
         className="block border p-5 text-white max-w-lg mx-auto my-4 shadow-lg font-sans text-left transition-all duration-300 flex flex-col justify-between"
       >
         {showCategoryLabels && <span className="block text-sm font-bold text-center mb-4 font-mono" style={{ color: styles.titleColor }}>Trophy Podium</span>}
-        <span className="flex justify-center items-end gap-4 flex-1 block mt-2">
+        <span className="flex justify-center items-end gap-4 flex-1 mt-2 block">
           {/* 2nd Place */}
           {podiums[0] && (
             <span className="flex flex-col items-center inline-block">
               <TrophyIcon rank={podiums[0].rank} color={podiums[0].color} />
               <span className="text-[9px] text-zinc-400 font-mono mt-1 w-14 truncate text-center block">{podiums[0].id}</span>
-              <span className="w-14 h-12 bg-white/5 border border-white/10 rounded-t-md flex items-center justify-center font-black font-mono mt-2" style={{ color: podiums[0].color.startsWith('linear-gradient') ? '#ec4899' : podiums[0].color }}>2nd</span>
+              <span className="w-14 h-12 bg-white/5 border border-white/10 rounded-t-md flex items-center justify-center font-black font-mono mt-2 block" style={{ color: podiums[0].color.startsWith('linear-gradient') ? '#ec4899' : podiums[0].color }}>2nd</span>
             </span>
           )}
           {/* 1st Place */}
@@ -1061,7 +1219,7 @@ export const TrophiesCardPreview = ({ stats, profile }: { stats: any; profile: a
             <span className="flex flex-col items-center inline-block">
               <TrophyIcon rank={podiums[1].rank} color={podiums[1].color} />
               <span className="text-[9px] text-zinc-400 font-mono mt-1 w-14 truncate text-center block">{podiums[1].id}</span>
-              <span className="w-16 h-18 bg-white/10 border border-white/20 rounded-t-md flex items-center justify-center font-black font-mono mt-2 text-lg" style={{ color: podiums[1].color.startsWith('linear-gradient') ? '#ec4899' : podiums[1].color }}>1st</span>
+              <span className="w-16 h-18 bg-white/10 border border-white/20 rounded-t-md flex items-center justify-center font-black font-mono mt-2 text-lg block" style={{ color: podiums[1].color.startsWith('linear-gradient') ? '#ec4899' : podiums[1].color }}>1st</span>
             </span>
           )}
           {/* 3rd Place */}
@@ -1069,7 +1227,7 @@ export const TrophiesCardPreview = ({ stats, profile }: { stats: any; profile: a
             <span className="flex flex-col items-center inline-block">
               <TrophyIcon rank={podiums[2].rank} color={podiums[2].color} />
               <span className="text-[9px] text-zinc-400 font-mono mt-1 w-14 truncate text-center block">{podiums[2].id}</span>
-              <span className="w-14 h-9 bg-white/5 border border-white/10 rounded-t-md flex items-center justify-center font-black font-mono mt-2" style={{ color: podiums[2].color.startsWith('linear-gradient') ? '#ec4899' : podiums[2].color }}>3rd</span>
+              <span className="w-14 h-9 bg-white/5 border border-white/10 rounded-t-md flex items-center justify-center font-black font-mono mt-2 block" style={{ color: podiums[2].color.startsWith('linear-gradient') ? '#ec4899' : podiums[2].color }}>3rd</span>
             </span>
           )}
         </span>

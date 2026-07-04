@@ -19,16 +19,23 @@ export async function GET(request: Request) {
 
   try {
     // 1. Fetch repositories
-    const reposRes = await fetch(`https://api.github.com/users/${username}/repos?per_page=100&sort=updated`, {
-      headers,
-      next: { revalidate: 3600 }
-    });
+    let page = 1;
+    const reposData: any[] = [];
+    while (true) {
+      const reposRes = await fetch(`https://api.github.com/users/${username}/repos?per_page=100&page=${page}&sort=updated`, {
+        headers,
+        next: { revalidate: 3600 }
+      });
 
-    if (!reposRes.ok) {
-      return NextResponse.json({ error: 'Failed to fetch repositories' }, { status: reposRes.status });
+      if (!reposRes.ok) {
+        return NextResponse.json({ error: 'Failed to fetch repositories' }, { status: reposRes.status });
+      }
+
+      const pageData: any[] = await reposRes.json();
+      reposData.push(...pageData);
+      if (pageData.length < 100) break;
+      page++;
     }
-
-    const reposData: any[] = await reposRes.json();
     
     let totalStars = 0;
     let totalForks = 0;

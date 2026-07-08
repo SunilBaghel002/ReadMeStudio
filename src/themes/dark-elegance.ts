@@ -31,7 +31,7 @@ export const definition: ThemeDefinition = {
   statsTheme: 'tokyonight',
   badgeStyle: 'flat',
   sectionsSpec: {
-    order: ['header', 'typing', 'about', 'skills', 'stats', 'projects', 'quote', 'socials'],
+    order: ['header', 'typing', 'about', 'skills', 'stats', 'trophies', 'projects', 'quote', 'socials'],
     enabled: ['header', 'typing', 'about', 'skills', 'stats', 'quote', 'socials'],
   },
 };
@@ -40,6 +40,7 @@ const ELEGANT_DIV = `<p align="center">✦ ────────────�
 
 export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => {
   const { username, name, bio, skills, selectedRepos, socials, customization, baseUrl } = input;
+  const statsTheme = input.statsTheme || definition.statsTheme || 'tokyonight';
   const c = customization;
   const blocks = new Map<SectionType, string>();
 
@@ -118,6 +119,17 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     l.push(`</p>\n`);
     l.push(ELEGANT_DIV);
     blocks.set('stats', l.join('\n'));
+  }
+
+  // TROPHIES
+  {
+    const l: string[] = [];
+    l.push(`## ✧ Achievements & Honors\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/trophies?username=${username}&theme=${statsTheme}&no_frame=true&no_bg=true" alt="Trophies" />`);
+    l.push(`</p>\n`);
+    l.push(ELEGANT_DIV);
+    blocks.set('trophies', l.join('\n'));
   }
 
   // PROJECTS

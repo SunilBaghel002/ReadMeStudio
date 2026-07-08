@@ -31,7 +31,7 @@ export const definition: ThemeDefinition = {
   statsTheme: 'radical',
   badgeStyle: 'for-the-badge',
   sectionsSpec: {
-    order: ['header', 'typing', 'about', 'skills', 'stats', 'projects', 'activity-graph', 'quote', 'socials', 'visitor-counter'],
+    order: ['header', 'typing', 'about', 'skills', 'stats', 'trophies', 'projects', 'activity-graph', 'quote', 'socials', 'visitor-counter'],
     enabled: ['header', 'typing', 'about', 'skills', 'stats', 'activity-graph', 'quote', 'socials', 'visitor-counter'],
   },
 };
@@ -56,6 +56,7 @@ const SKILLICONS_MAP: Record<string, string> = {
 
 export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => {
   const { username, name, bio, skills, selectedRepos, socials, customization, baseUrl } = input;
+  const statsTheme = input.statsTheme || definition.statsTheme || 'radical';
   const c = customization;
   const blocks = new Map<SectionType, string>();
 
@@ -146,6 +147,17 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     l.push(`</p>\n`);
     l.push(CREATIVE_DIV);
     blocks.set('stats', l.join('\n'));
+  }
+
+  // TROPHIES
+  {
+    const l: string[] = [];
+    l.push(`## 🏆 Achievements & Badges\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/trophies?username=${username}&theme=${statsTheme}&no_frame=true&no_bg=true" alt="Trophies" />`);
+    l.push(`</p>\n`);
+    l.push(CREATIVE_DIV);
+    blocks.set('trophies', l.join('\n'));
   }
 
   // PROJECTS

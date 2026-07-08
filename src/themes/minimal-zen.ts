@@ -30,13 +30,14 @@ export const definition: ThemeDefinition = {
   statsTheme: 'default',
   badgeStyle: 'flat',
   sectionsSpec: {
-    order: ['header', 'about', 'skills', 'stats', 'socials'],
+    order: ['header', 'about', 'skills', 'stats', 'trophies', 'socials'],
     enabled: ['header', 'about', 'skills', 'stats', 'socials'],
   },
 };
 
 export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => {
   const { username, name, bio, skills, socials, customization, baseUrl } = input;
+  const statsTheme = input.statsTheme || definition.statsTheme || 'default';
   const c = customization;
   const blocks = new Map<SectionType, string>();
 
@@ -81,6 +82,16 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     l.push(`<img src="${baseUrl}/api/github/stats?username=${username}&theme=default&hide_border=true&show_icons=true&bg_color=00000000&title_color=24292e&text_color=586069&icon_color=0366d6" alt="Stats" />\n`);
     l.push('');
     blocks.set('stats', l.join('\n'));
+  }
+
+  // TROPHIES
+  {
+    const l: string[] = [];
+    l.push(`### Trophies\n`);
+    l.push(`<p align="left">`);
+    l.push(`  <img src="${baseUrl}/api/github/trophies?username=${username}&theme=${statsTheme}&no_frame=true&no_bg=true" alt="Trophies" />`);
+    l.push(`</p>\n`);
+    blocks.set('trophies', l.join('\n'));
   }
 
   // SOCIALS

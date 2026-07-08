@@ -31,13 +31,14 @@ export const definition: ThemeDefinition = {
   statsTheme: 'merko',
   badgeStyle: 'flat-square',
   sectionsSpec: {
-    order: ['header', 'typing', 'about', 'skills', 'stats', 'activity-graph', 'projects', 'quote', 'socials', 'visitor-counter'],
+    order: ['header', 'typing', 'about', 'skills', 'stats', 'trophies', 'activity-graph', 'projects', 'quote', 'socials', 'visitor-counter'],
     enabled: ['header', 'typing', 'about', 'skills', 'stats', 'activity-graph', 'quote', 'socials', 'visitor-counter'],
   },
 };
 
 export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => {
   const { username, name, bio, skills, selectedRepos, socials, customization, baseUrl } = input;
+  const statsTheme = input.statsTheme || definition.statsTheme || 'merko';
   const c = customization;
   const tagline = c.customTagline || bio || 'Software Developer';
   const blocks = new Map<SectionType, string>();
@@ -161,6 +162,17 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     l.push(`</p>\n`);
     l.push(`---\n`);
     blocks.set('stats', l.join('\n'));
+  }
+
+  // TROPHIES
+  {
+    const l: string[] = [];
+    l.push(`## \`> loot-inventory --show-trophies\`\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/trophies?username=${username}&theme=${statsTheme}&no_frame=true&no_bg=true" alt="Trophies" />`);
+    l.push(`</p>\n`);
+    l.push(`---\n`);
+    blocks.set('trophies', l.join('\n'));
   }
 
   // ACTIVITY GRAPH

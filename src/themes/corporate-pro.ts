@@ -31,13 +31,14 @@ export const definition: ThemeDefinition = {
   statsTheme: 'default',
   badgeStyle: 'for-the-badge',
   sectionsSpec: {
-    order: ['header', 'typing', 'about', 'skills', 'working-on', 'stats', 'streak', 'languages', 'projects', 'socials', 'visitor-counter'],
+    order: ['header', 'typing', 'about', 'skills', 'working-on', 'stats', 'streak', 'languages', 'trophies', 'projects', 'socials', 'visitor-counter'],
     enabled: ['header', 'typing', 'about', 'skills', 'stats', 'streak', 'socials', 'visitor-counter'],
   },
 };
 
 export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => {
   const { username, name, bio, skills, selectedRepos, socials, customization, baseUrl } = input;
+  const statsTheme = input.statsTheme || definition.statsTheme || 'default';
   const c = customization;
   const blocks = new Map<SectionType, string>();
 
@@ -178,6 +179,17 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     l.push('');
     l.push(`---\n`);
     blocks.set('projects', l.join('\n'));
+  }
+
+  // TROPHIES
+  {
+    const l: string[] = [];
+    l.push(`## 🏆 GitHub Trophies\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="https://github-profile-trophy.vercel.app/?username=${username}&theme=${statsTheme}&no-frame=true&no-bg=true&margin-w=4&margin-h=4" alt="Trophies" />`);
+    l.push(`</p>\n`);
+    l.push(`---\n`);
+    blocks.set('trophies', l.join('\n'));
   }
 
   // SOCIALS

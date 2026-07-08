@@ -31,13 +31,14 @@ export const definition: ThemeDefinition = {
   statsTheme: 'radical',
   badgeStyle: 'flat',
   sectionsSpec: {
-    order: ['header', 'typing', 'about', 'stats', 'activity-graph', 'trophies', 'skills', 'projects', 'snake-game', 'socials', 'visitor-counter'],
-    enabled: ['header', 'typing', 'about', 'stats', 'activity-graph', 'trophies', 'skills', 'projects', 'socials', 'visitor-counter'],
+    order: ['header', 'typing', 'about', 'stats', 'streak', 'languages', 'activity-graph', 'trophies', 'skills', 'projects', 'snake-game', 'socials', 'visitor-counter'],
+    enabled: ['header', 'typing', 'about', 'stats', 'streak', 'languages', 'activity-graph', 'trophies', 'skills', 'projects', 'socials', 'visitor-counter'],
   },
 };
 
 export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => {
   const { username, name, bio, skills, selectedRepos, socials, customization, baseUrl } = input;
+  const statsTheme = input.statsTheme || definition.statsTheme || 'radical';
   const c = customization;
   const blocks = new Map<SectionType, string>();
 
@@ -87,14 +88,32 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 📊 Contribution Statistics\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=radical&hide_border=true&show_icons=true&include_all_commits=true" alt="GitHub Stats" width="49%" />`);
-    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=radical&hide_border=true" alt="Streak" width="49%" />`);
-    l.push(`</p>\n`);
-    l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/languages?username=${username}&theme=radical&hide_border=true&langs_count=10" alt="Languages" />`);
+    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=${statsTheme}&hide_border=true&show_icons=true&include_all_commits=true" alt="GitHub Stats" width="55%" />`);
     l.push(`</p>\n`);
     l.push(`---\n`);
     blocks.set('stats', l.join('\n'));
+  }
+
+  // STREAK
+  {
+    const l: string[] = [];
+    l.push(`## 🔥 Commit Streak\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=${statsTheme}&hide_border=true" alt="Streak" width="55%" />`);
+    l.push(`</p>\n`);
+    l.push(`---\n`);
+    blocks.set('streak', l.join('\n'));
+  }
+
+  // LANGUAGES
+  {
+    const l: string[] = [];
+    l.push(`## 📋 Most Used Languages\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/languages?username=${username}&theme=${statsTheme}&hide_border=true&langs_count=10" alt="Languages" />`);
+    l.push(`</p>\n`);
+    l.push(`---\n`);
+    blocks.set('languages', l.join('\n'));
   }
 
   // ACTIVITY GRAPH

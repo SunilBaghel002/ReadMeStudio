@@ -31,8 +31,8 @@ export const definition: ThemeDefinition = {
   statsTheme: 'merko',
   badgeStyle: 'flat-square',
   sectionsSpec: {
-    order: ['header', 'typing', 'about', 'skills', 'stats', 'trophies', 'activity-graph', 'projects', 'quote', 'socials', 'visitor-counter'],
-    enabled: ['header', 'typing', 'about', 'skills', 'stats', 'activity-graph', 'quote', 'socials', 'visitor-counter'],
+    order: ['header', 'typing', 'about', 'skills', 'stats', 'streak', 'languages', 'trophies', 'activity-graph', 'projects', 'quote', 'socials', 'visitor-counter'],
+    enabled: ['header', 'typing', 'about', 'skills', 'stats', 'streak', 'activity-graph', 'quote', 'socials', 'visitor-counter'],
   },
 };
 
@@ -152,16 +152,32 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     l.push(`╚══════════════════════════════════╝`);
     l.push('```\n');
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=merko&hide_border=true&show_icons=true&include_all_commits=true" alt="GitHub Stats" />`);
-    l.push(`</p>\n`);
-    l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=merko&hide_border=true" alt="Streak Stats" />`);
-    l.push(`</p>\n`);
-    l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/languages?username=${username}&theme=merko&hide_border=true&langs_count=8" alt="Top Languages" />`);
+    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=${statsTheme}&hide_border=true&show_icons=true&include_all_commits=true" alt="GitHub Stats" />`);
     l.push(`</p>\n`);
     l.push(`---\n`);
     blocks.set('stats', l.join('\n'));
+  }
+
+  // STREAK
+  {
+    const l: string[] = [];
+    l.push(`## \`> streak-analyzer\`\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=${statsTheme}&hide_border=true" alt="Streak Stats" />`);
+    l.push(`</p>\n`);
+    l.push(`---\n`);
+    blocks.set('streak', l.join('\n'));
+  }
+
+  // LANGUAGES
+  {
+    const l: string[] = [];
+    l.push(`## \`> language-breakdown\`\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/languages?username=${username}&theme=${statsTheme}&hide_border=true&langs_count=8" alt="Top Languages" />`);
+    l.push(`</p>\n`);
+    l.push(`---\n`);
+    blocks.set('languages', l.join('\n'));
   }
 
   // TROPHIES

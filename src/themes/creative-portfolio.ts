@@ -31,8 +31,8 @@ export const definition: ThemeDefinition = {
   statsTheme: 'radical',
   badgeStyle: 'for-the-badge',
   sectionsSpec: {
-    order: ['header', 'typing', 'about', 'skills', 'stats', 'trophies', 'projects', 'activity-graph', 'quote', 'socials', 'visitor-counter'],
-    enabled: ['header', 'typing', 'about', 'skills', 'stats', 'activity-graph', 'quote', 'socials', 'visitor-counter'],
+    order: ['header', 'typing', 'about', 'skills', 'stats', 'streak', 'languages', 'trophies', 'projects', 'activity-graph', 'quote', 'socials', 'visitor-counter'],
+    enabled: ['header', 'typing', 'about', 'skills', 'stats', 'streak', 'languages', 'activity-graph', 'quote', 'socials', 'visitor-counter'],
   },
 };
 
@@ -139,14 +139,32 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 📊 Creative Metrics\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=radical&hide_border=true&show_icons=true&include_all_commits=true" alt="Stats" />`);
-    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=radical&hide_border=true" alt="Streak" />`);
-    l.push(`</p>\n`);
-    l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/languages?username=${username}&theme=radical&hide_border=true&langs_count=8" alt="Languages" />`);
+    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=${statsTheme}&hide_border=true&show_icons=true&include_all_commits=true" alt="Stats" />`);
     l.push(`</p>\n`);
     l.push(CREATIVE_DIV);
     blocks.set('stats', l.join('\n'));
+  }
+
+  // STREAK
+  {
+    const l: string[] = [];
+    l.push(`## 🔥 Commit Streak\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=${statsTheme}&hide_border=true" alt="Streak" />`);
+    l.push(`</p>\n`);
+    l.push(CREATIVE_DIV);
+    blocks.set('streak', l.join('\n'));
+  }
+
+  // LANGUAGES
+  {
+    const l: string[] = [];
+    l.push(`## 📋 Most Used Languages\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/languages?username=${username}&theme=${statsTheme}&hide_border=true&langs_count=8" alt="Languages" />`);
+    l.push(`</p>\n`);
+    l.push(CREATIVE_DIV);
+    blocks.set('languages', l.join('\n'));
   }
 
   // TROPHIES

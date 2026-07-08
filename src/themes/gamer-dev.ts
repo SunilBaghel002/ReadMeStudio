@@ -31,8 +31,8 @@ export const definition: ThemeDefinition = {
   statsTheme: 'radical',
   badgeStyle: 'for-the-badge',
   sectionsSpec: {
-    order: ['header', 'typing', 'about', 'skills', 'stats', 'trophies', 'projects', 'activity-graph', 'quote', 'socials', 'visitor-counter'],
-    enabled: ['header', 'typing', 'about', 'skills', 'stats', 'trophies', 'activity-graph', 'quote', 'socials', 'visitor-counter'],
+    order: ['header', 'typing', 'about', 'skills', 'stats', 'streak', 'languages', 'trophies', 'projects', 'activity-graph', 'quote', 'socials', 'visitor-counter'],
+    enabled: ['header', 'typing', 'about', 'skills', 'stats', 'streak', 'languages', 'trophies', 'activity-graph', 'quote', 'socials', 'visitor-counter'],
   },
 };
 
@@ -40,6 +40,7 @@ const GAMER_DIV = `<p align="center">⚔️━━━━━━━━━━━━�
 
 export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => {
   const { username, name, bio, skills, selectedRepos, socials, customization, baseUrl } = input;
+  const statsTheme = input.statsTheme || definition.statsTheme || 'radical';
   const c = customization;
   const blocks = new Map<SectionType, string>();
 
@@ -124,18 +125,32 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 📊 Player Stats & Achievements\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=radical&hide_border=true&show_icons=true&include_all_commits=true" alt="Player Stats" />`);
+    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=${statsTheme}&hide_border=true&show_icons=true&include_all_commits=true" alt="Player Stats" />`);
     l.push(`</p>\n`);
-    l.push(`### 🔥 Combo Streak\n`);
-    l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=radical&hide_border=true" alt="Combo Streak" />`);
-    l.push(`</p>\n`);
-    l.push(`### 📋 Skill Distribution\n`);
-    l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/languages?username=${username}&theme=radical&hide_border=true&langs_count=8" alt="Skill Distribution" />`);
-    l.push(`</p>\n`);
-    l.push(`<p align="center">🏆━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🏆</p>\n`);
+    l.push(GAMER_DIV);
     blocks.set('stats', l.join('\n'));
+  }
+
+  // STREAK
+  {
+    const l: string[] = [];
+    l.push(`## 🔥 Combo Streak\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=${statsTheme}&hide_border=true" alt="Combo Streak" />`);
+    l.push(`</p>\n`);
+    l.push(GAMER_DIV);
+    blocks.set('streak', l.join('\n'));
+  }
+
+  // LANGUAGES
+  {
+    const l: string[] = [];
+    l.push(`## 📋 Skill Distribution\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/languages?username=${username}&theme=${statsTheme}&hide_border=true&langs_count=8" alt="Skill Distribution" />`);
+    l.push(`</p>\n`);
+    l.push(GAMER_DIV);
+    blocks.set('languages', l.join('\n'));
   }
 
   // TROPHIES

@@ -31,8 +31,8 @@ export const definition: ThemeDefinition = {
   statsTheme: 'synthwave',
   badgeStyle: 'for-the-badge',
   sectionsSpec: {
-    order: ['header', 'typing', 'about', 'skills', 'stats', 'trophies', 'activity-graph', 'projects', 'quote', 'socials', 'visitor-counter'],
-    enabled: ['header', 'typing', 'about', 'skills', 'stats', 'trophies', 'activity-graph', 'quote', 'socials', 'visitor-counter'],
+    order: ['header', 'typing', 'about', 'skills', 'stats', 'streak', 'languages', 'trophies', 'activity-graph', 'projects', 'quote', 'socials', 'visitor-counter'],
+    enabled: ['header', 'typing', 'about', 'skills', 'stats', 'streak', 'languages', 'trophies', 'activity-graph', 'quote', 'socials', 'visitor-counter'],
   },
 };
 
@@ -40,6 +40,7 @@ const NEON_DIV = `<img src="https://capsule-render.vercel.app/api?type=rect&colo
 
 export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => {
   const { username, name, bio, skills, selectedRepos, socials, customization, baseUrl } = input;
+  const statsTheme = input.statsTheme || definition.statsTheme || 'synthwave';
   const c = customization;
   const blocks = new Map<SectionType, string>();
 
@@ -101,16 +102,32 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 🌅 GitHub Stats 🌅\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=synthwave&hide_border=false&border_color=FF006E&show_icons=true&include_all_commits=true" alt="Stats" />`);
-    l.push(`</p>\n`);
-    l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=synthwave&hide_border=false&border_color=00F5FF" alt="Streak" />`);
-    l.push(`</p>\n`);
-    l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/languages?username=${username}&theme=synthwave&hide_border=false&border_color=8338EC&langs_count=8" alt="Languages" />`);
+    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=${statsTheme}&hide_border=false&border_color=FF006E&show_icons=true&include_all_commits=true" alt="Stats" />`);
     l.push(`</p>\n`);
     l.push(NEON_DIV);
     blocks.set('stats', l.join('\n'));
+  }
+
+  // STREAK
+  {
+    const l: string[] = [];
+    l.push(`## 🔥 Commit Streak 🔥\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=${statsTheme}&hide_border=false&border_color=00F5FF" alt="Streak" />`);
+    l.push(`</p>\n`);
+    l.push(NEON_DIV);
+    blocks.set('streak', l.join('\n'));
+  }
+
+  // LANGUAGES
+  {
+    const l: string[] = [];
+    l.push(`## 📋 Languages Used 📋\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/languages?username=${username}&theme=${statsTheme}&hide_border=false&border_color=8338EC&langs_count=8" alt="Languages" />`);
+    l.push(`</p>\n`);
+    l.push(NEON_DIV);
+    blocks.set('languages', l.join('\n'));
   }
 
   // TROPHIES

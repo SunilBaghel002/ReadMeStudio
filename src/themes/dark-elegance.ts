@@ -31,8 +31,8 @@ export const definition: ThemeDefinition = {
   statsTheme: 'tokyonight',
   badgeStyle: 'flat',
   sectionsSpec: {
-    order: ['header', 'typing', 'about', 'skills', 'stats', 'trophies', 'projects', 'quote', 'socials'],
-    enabled: ['header', 'typing', 'about', 'skills', 'stats', 'quote', 'socials'],
+    order: ['header', 'typing', 'about', 'skills', 'stats', 'streak', 'languages', 'trophies', 'projects', 'quote', 'socials'],
+    enabled: ['header', 'typing', 'about', 'skills', 'stats', 'streak', 'quote', 'socials'],
   },
 };
 
@@ -112,13 +112,32 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## ✧ Metrics\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=tokyonight&hide_border=true&show_icons=true&include_all_commits=true&icon_color=FFD700&title_color=FFD700" alt="Stats" />`);
-    l.push(`</p>\n`);
-    l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=tokyonight&hide_border=true&ring=FFD700&fire=FFD700&currStreakLabel=FFD700" alt="Streak" />`);
+    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=${statsTheme}&hide_border=true&show_icons=true&include_all_commits=true&icon_color=FFD700&title_color=FFD700" alt="Stats" />`);
     l.push(`</p>\n`);
     l.push(ELEGANT_DIV);
     blocks.set('stats', l.join('\n'));
+  }
+
+  // STREAK
+  {
+    const l: string[] = [];
+    l.push(`## ✧ Streak Metrics\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=${statsTheme}&hide_border=true&ring=FFD700&fire=FFD700&currStreakLabel=FFD700" alt="Streak" />`);
+    l.push(`</p>\n`);
+    l.push(ELEGANT_DIV);
+    blocks.set('streak', l.join('\n'));
+  }
+
+  // LANGUAGES
+  {
+    const l: string[] = [];
+    l.push(`## ✧ Language Distribution\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/languages?username=${username}&theme=${statsTheme}&hide_border=true&langs_count=8&icon_color=FFD700&title_color=FFD700" alt="Languages" />`);
+    l.push(`</p>\n`);
+    l.push(ELEGANT_DIV);
+    blocks.set('languages', l.join('\n'));
   }
 
   // TROPHIES

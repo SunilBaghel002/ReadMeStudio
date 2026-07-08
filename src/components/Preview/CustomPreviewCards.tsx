@@ -1083,7 +1083,7 @@ export const TrophiesCardPreview = ({ stats, profile }: { stats: any; profile: a
               <span className="text-xs font-black font-mono mt-2 text-white block">{tr.value}</span>
               
               {showProgress && (
-                <div className="w-full mt-2 space-y-1">
+                <span className="w-full mt-2 space-y-1 block">
                   <span className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden block">
                     <span 
                       className="h-full block" 
@@ -1098,11 +1098,11 @@ export const TrophiesCardPreview = ({ stats, profile }: { stats: any; profile: a
                       {tr.value} / {tr.nextVal}
                     </span>
                   )}
-                </div>
+                </span>
               )}
 
               {showNextRank && (
-                <div className="text-[8.5px] font-mono mt-1.5 w-full text-center select-none truncate leading-none">
+                <span className="text-[8.5px] font-mono mt-1.5 w-full text-center select-none truncate leading-none block">
                   {tr.rank === 'SSS' ? (
                     <span className="text-yellow-400 font-bold">MAX RANK! 👑</span>
                   ) : (
@@ -1110,7 +1110,7 @@ export const TrophiesCardPreview = ({ stats, profile }: { stats: any; profile: a
                       +{tr.nextVal - tr.value} to reach <strong style={{ color: tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color }}>{tr.nextRank}</strong>
                     </span>
                   )}
-                </div>
+                </span>
               )}
             </span>
           ))}

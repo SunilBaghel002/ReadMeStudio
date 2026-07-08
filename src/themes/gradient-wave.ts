@@ -82,7 +82,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     l.push(`## 💫 About Me\n`);
     l.push(`<table>`);
     l.push(`  <tr>`);
-    l.push(`    <td width="60%" valign="top">\n`);
+    l.push(`    <td width="60%" style="vertical-align: top;">\n`);
     l.push('```javascript');
     l.push(`const developer = {`);
     l.push(`  name: "${name}",`);
@@ -94,7 +94,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     l.push(`};`);
     l.push('```\n');
     l.push(`    </td>`);
-    l.push(`    <td width="40%" align="center" valign="middle">`);
+    l.push(`    <td width="40%" align="center" style="vertical-align: middle;">`);
     l.push(`      <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbW51bm5mNWp3bnQwaHk1azlndmRycjM1cWRicTRiY2U5Mzgwd2c1byZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/L13yIHSgrC7yC7Ma5B/giphy.gif" width="180" alt="Coding GIF" />`);
     l.push(`    </td>`);
     l.push(`  </tr>`);

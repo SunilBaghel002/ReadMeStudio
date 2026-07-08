@@ -31,8 +31,8 @@ export const definition: ThemeDefinition = {
   statsTheme: 'dracula',
   badgeStyle: 'plastic',
   sectionsSpec: {
-    order: ['header', 'typing', 'about', 'goals-list', 'skills', 'stats', 'trophies', 'activity-graph', 'snake-game', 'quote', 'projects', 'socials', 'visitor-counter'],
-    enabled: ['header', 'typing', 'about', 'goals-list', 'skills', 'stats', 'trophies', 'activity-graph', 'snake-game', 'quote', 'socials', 'visitor-counter'],
+    order: ['header', 'typing', 'about', 'goals-list', 'skills', 'stats', 'streak', 'languages', 'trophies', 'activity-graph', 'snake-game', 'quote', 'projects', 'socials', 'visitor-counter'],
+    enabled: ['header', 'typing', 'about', 'goals-list', 'skills', 'stats', 'streak', 'languages', 'trophies', 'activity-graph', 'snake-game', 'quote', 'socials', 'visitor-counter'],
   },
 };
 
@@ -149,19 +149,37 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     blocks.set('skills', l.join('\n'));
   }
 
-  // STATS (Stacked vertically using external shion.dev / demolab APIs)
+  // STATS
   {
     const l: string[] = [];
     l.push(`## 📊 GitHub Stats\n`);
     l.push(`<p align="center">`);
     l.push(`  <img src="https://github-readme-stats.shion.dev/api?username=${username}&theme=${statsTheme}&hide_border=true&include_all_commits=true&count_private=true" alt="GitHub Stats" />`);
-    l.push(`  <br/>`);
-    l.push(`  <img src="https://streak-stats.demolab.com/?user=${username}&theme=${statsTheme}&hide_border=true" alt="GitHub Streak" />`);
-    l.push(`  <br/>`);
-    l.push(`  <img src="https://github-readme-stats.shion.dev/api/top-langs/?username=${username}&theme=${statsTheme}&hide_border=true&include_all_commits=true&count_private=true&layout=compact" alt="Top Languages" />`);
     l.push(`</p>\n`);
     l.push(`---\n`);
     blocks.set('stats', l.join('\n'));
+  }
+
+  // STREAK
+  {
+    const l: string[] = [];
+    l.push(`## 🔥 Commit Streak\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="https://streak-stats.demolab.com/?user=${username}&theme=${statsTheme}&hide_border=true" alt="GitHub Streak" />`);
+    l.push(`</p>\n`);
+    l.push(`---\n`);
+    blocks.set('streak', l.join('\n'));
+  }
+
+  // LANGUAGES
+  {
+    const l: string[] = [];
+    l.push(`## 📋 Most Used Languages\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="https://github-readme-stats.shion.dev/api/top-langs/?username=${username}&theme=${statsTheme}&hide_border=true&include_all_commits=true&count_private=true&layout=compact" alt="Top Languages" />`);
+    l.push(`</p>\n`);
+    l.push(`---\n`);
+    blocks.set('languages', l.join('\n'));
   }
 
   // TROPHIES

@@ -13,7 +13,7 @@ export const definition: ThemeDefinition = {
     primary: '#0077B5',
     secondary: '#004182',
     accent: '#00A0DC',
-    background: '#ffffff',
+    background: '#0d1117',
   },
   defaultConfig: {
     primaryColor: '#0077B5',
@@ -31,8 +31,8 @@ export const definition: ThemeDefinition = {
   statsTheme: 'default',
   badgeStyle: 'for-the-badge',
   sectionsSpec: {
-    order: ['header', 'typing', 'about', 'skills', 'working-on', 'stats', 'projects', 'socials', 'visitor-counter'],
-    enabled: ['header', 'typing', 'about', 'skills', 'stats', 'socials', 'visitor-counter'],
+    order: ['header', 'typing', 'about', 'skills', 'working-on', 'stats', 'streak', 'languages', 'projects', 'socials', 'visitor-counter'],
+    enabled: ['header', 'typing', 'about', 'skills', 'stats', 'streak', 'socials', 'visitor-counter'],
   },
 };
 
@@ -138,13 +138,32 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## Performance Metrics\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=default&hide_border=true&show_icons=true&include_all_commits=true&bg_color=ffffff&title_color=0077B5&text_color=333333&icon_color=0077B5" alt="GitHub Stats" />`);
-    l.push(`</p>\n`);
-    l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=default&hide_border=true&ring=0077B5&fire=004182&currStreakLabel=0077B5" alt="Streak" />`);
+    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=default&hide_border=true&show_icons=true&include_all_commits=true&bg_color=0d1117&title_color=0077B5&text_color=c9d1d9&icon_color=0077B5" alt="GitHub Stats" />`);
     l.push(`</p>\n`);
     l.push(`---\n`);
     blocks.set('stats', l.join('\n'));
+  }
+
+  // STREAK
+  {
+    const l: string[] = [];
+    l.push(`## Streak Metrics\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=default&hide_border=true&ring=0077B5&fire=004182&currStreakLabel=0077B5&bg_color=0d1117&text_color=c9d1d9" alt="Streak" />`);
+    l.push(`</p>\n`);
+    l.push(`---\n`);
+    blocks.set('streak', l.join('\n'));
+  }
+
+  // LANGUAGES
+  {
+    const l: string[] = [];
+    l.push(`## Language Distribution\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/languages?username=${username}&theme=default&hide_border=true&langs_count=8&bg_color=0d1117&title_color=0077B5&text_color=c9d1d9" alt="Languages" />`);
+    l.push(`</p>\n`);
+    l.push(`---\n`);
+    blocks.set('languages', l.join('\n'));
   }
 
   // PROJECTS

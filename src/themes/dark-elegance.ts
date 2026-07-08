@@ -1,5 +1,7 @@
 import { ThemeDefinition, ThemeGenerator, ThemeGeneratorInput } from '@/types/theme.types';
 import { SKILL_BADGES } from '@/lib/markdown';
+import type { SectionType } from '@/types/github.types';
+import { assembleSections } from './assemble';
 
 export const definition: ThemeDefinition = {
   id: 'dark-elegance',
@@ -28,146 +30,147 @@ export const definition: ThemeDefinition = {
   },
   statsTheme: 'tokyonight',
   badgeStyle: 'flat',
+  sectionsSpec: {
+    order: ['header', 'typing', 'about', 'skills', 'stats', 'projects', 'quote', 'socials'],
+    enabled: ['header', 'typing', 'about', 'skills', 'stats', 'quote', 'socials'],
+  },
 };
+
+const ELEGANT_DIV = `<p align="center">✦ ─────────────────────────────── ✦</p>\n`;
 
 export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => {
   const { username, name, bio, skills, selectedRepos, socials, customization, baseUrl } = input;
   const c = customization;
-  const lines: string[] = [];
+  const blocks = new Map<SectionType, string>();
 
-  // ═══════════════════════════════════════
-  // HEADER: Minimal dark with gold
-  // ═══════════════════════════════════════
-  lines.push(`<p align="center">`);
-  lines.push(`  <img src="https://capsule-render.vercel.app/api?type=rect&color=0a0a0f&height=1" width="100%" alt="" />`);
-  lines.push(`</p>\n`);
+  // HEADER
+  {
+    const l: string[] = [];
+    l.push(`<p align="center">`);
+    l.push(`  <img src="https://capsule-render.vercel.app/api?type=rect&color=0a0a0f&height=1" width="100%" alt="" />`);
+    l.push(`</p>\n`);
+    l.push(`<div align="center">\n`);
+    l.push(`<img src="https://github.com/${username}.png" width="130" height="130" style="border-radius: 50%; border: 2px solid #FFD700" alt="Avatar" />\n`);
+    l.push('');
+    l.push(`# ✦ ${c.customTitle || name} ✦\n`);
+    l.push(`*${c.customTagline || bio || 'Software Architect & Engineer'}*\n`);
+    l.push(`</div>\n`);
+    blocks.set('header', l.join('\n'));
+  }
 
-  lines.push(`<div align="center">\n`);
-  lines.push(`<img src="https://github.com/${username}.png" width="130" height="130" style="border-radius: 50%; border: 2px solid #FFD700" alt="Avatar" />\n`);
-  lines.push('');
-  lines.push(`# ✦ ${c.customTitle || name} ✦\n`);
-  lines.push(`*${c.customTagline || bio || 'Software Architect & Engineer'}*\n`);
-  lines.push(`</div>\n`);
-
-  // ═══════════════════════════════════════
-  // TYPING: Gold, elegant
-  // ═══════════════════════════════════════
-  if (c.showTypingAnimation) {
+  // TYPING
+  {
     const typingLines = [
       `Crafting elegant solutions`,
       `Architecture & design excellence`,
       `Precision in every line of code`,
     ];
     const linesParam = typingLines.map(l => encodeURIComponent(l)).join(';');
-    lines.push(`<p align="center">`);
-    lines.push(`  <img src="https://readme-typing-svg.demolab.com?font=Playfair+Display&weight=600&size=22&duration=4000&pause=2000&color=FFD700&center=true&vCenter=true&width=500&height=40&lines=${linesParam}" alt="Elegant Typing" />`);
-    lines.push(`</p>\n`);
+    const l: string[] = [];
+    l.push(`<p align="center">`);
+    l.push(`  <img src="https://readme-typing-svg.demolab.com?font=Playfair+Display&weight=600&size=22&duration=4000&pause=2000&color=FFD700&center=true&vCenter=true&width=500&height=40&lines=${linesParam}" alt="Elegant Typing" />`);
+    l.push(`</p>\n`);
+    l.push(ELEGANT_DIV);
+    blocks.set('typing', l.join('\n'));
   }
 
-  lines.push(`<p align="center">✦ ─────────────────────────────── ✦</p>\n`);
-
-  // ═══════════════════════════════════════
-  // ABOUT: Refined paragraph with quotes
-  // ═══════════════════════════════════════
-  lines.push(`## ✧ About\n`);
-  if (bio) {
-    lines.push(`> *${bio}*\n`);
-  }
-  lines.push(`A meticulous engineer with a passion for clean architecture and elegant solutions. I believe in writing code that is not just functional, but beautiful.\n`);
-
-  const items: string[] = [];
-  if (input.currentProject) items.push(`✦ Currently crafting **${input.currentProject}**`);
-  if (input.learning) items.push(`✧ Exploring **${input.learning}**`);
-  if (input.collab) items.push(`❖ Open to collaborating on **${input.collab}**`);
-  if (items.length > 0) {
-    items.forEach(item => lines.push(item));
-    lines.push('');
+  // ABOUT
+  {
+    const l: string[] = [];
+    l.push(`## ✧ About\n`);
+    if (bio) l.push(`> *${bio}*\n`);
+    l.push(`A meticulous engineer with a passion for clean architecture and elegant solutions. I believe in writing code that is not just functional, but beautiful.\n`);
+    const items: string[] = [];
+    if (input.currentProject) items.push(`✦ Currently crafting **${input.currentProject}**`);
+    if (input.learning) items.push(`✧ Exploring **${input.learning}**`);
+    if (input.collab) items.push(`❖ Open to collaborating on **${input.collab}**`);
+    if (items.length > 0) { items.forEach(item => l.push(item)); l.push(''); }
+    l.push(ELEGANT_DIV);
+    blocks.set('about', l.join('\n'));
   }
 
-  lines.push(`<p align="center">✦ ─────────────────────────────── ✦</p>\n`);
-
-  // ═══════════════════════════════════════
-  // TECH STACK: Dark badges with gold outlines
-  // ═══════════════════════════════════════
+  // SKILLS
   if (skills.length > 0) {
-    lines.push(`## ✧ Technologies\n`);
-    lines.push(`<p align="center">`);
+    const l: string[] = [];
+    l.push(`## ✧ Technologies\n`);
+    l.push(`<p align="center">`);
     const sortedSkills = [...skills].sort();
     const badges = sortedSkills.map(skill => {
       const details = SKILL_BADGES[skill];
-      if (details) {
-        return `  <img src="https://img.shields.io/badge/${encodeURIComponent(details.label)}-0a0a0f?style=flat&logo=${details.logo}&logoColor=FFD700" alt="${skill}" />`;
-      }
+      if (details) return `  <img src="https://img.shields.io/badge/${encodeURIComponent(details.label)}-0a0a0f?style=flat&logo=${details.logo}&logoColor=FFD700" alt="${skill}" />`;
       return `  <img src="https://img.shields.io/badge/${encodeURIComponent(skill)}-0a0a0f?style=flat&logoColor=FFD700" alt="${skill}" />`;
     });
-    lines.push(badges.join('\n'));
-    lines.push(`</p>\n`);
-    lines.push(`<p align="center">✦ ─────────────────────────────── ✦</p>\n`);
+    l.push(badges.join('\n'));
+    l.push(`</p>\n`);
+    l.push(ELEGANT_DIV);
+    blocks.set('skills', l.join('\n'));
   }
 
-  // ═══════════════════════════════════════
-  // STATS: Tokyo Night with gold touches
-  // ═══════════════════════════════════════
-  lines.push(`## ✧ Metrics\n`);
-  lines.push(`<p align="center">`);
-  lines.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=tokyonight&hide_border=true&show_icons=true&include_all_commits=true&icon_color=FFD700&title_color=FFD700" alt="Stats" />`);
-  lines.push(`</p>\n`);
+  // STATS
+  {
+    const l: string[] = [];
+    l.push(`## ✧ Metrics\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=tokyonight&hide_border=true&show_icons=true&include_all_commits=true&icon_color=FFD700&title_color=FFD700" alt="Stats" />`);
+    l.push(`</p>\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=tokyonight&hide_border=true&ring=FFD700&fire=FFD700&currStreakLabel=FFD700" alt="Streak" />`);
+    l.push(`</p>\n`);
+    l.push(ELEGANT_DIV);
+    blocks.set('stats', l.join('\n'));
+  }
 
-  lines.push(`<p align="center">`);
-  lines.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=tokyonight&hide_border=true&ring=FFD700&fire=FFD700&currStreakLabel=FFD700" alt="Streak" />`);
-  lines.push(`</p>\n`);
-
-  lines.push(`<p align="center">✦ ─────────────────────────────── ✦</p>\n`);
-
-  // ═══════════════════════════════════════
-  // SIGNATURE PROJECTS (top 3-4 only)
-  // ═══════════════════════════════════════
+  // PROJECTS
   if (selectedRepos.length > 0) {
-    lines.push(`## ✧ Signature Work\n`);
+    const l: string[] = [];
+    l.push(`## ✧ Signature Work\n`);
     const topRepos = selectedRepos.slice(0, 4);
-    lines.push(`<p align="center">`);
+    l.push(`<p align="center">`);
     topRepos.forEach(repo => {
-      lines.push(`  <a href="https://github.com/${username}/${repo}">`);
-      lines.push(`    <img src="https://github-readme-stats.shion.dev/api/pin/?username=${username}&repo=${repo}&theme=tokyonight&hide_border=true&icon_color=FFD700&title_color=FFD700" alt="${repo}" />`);
-      lines.push(`  </a>`);
+      l.push(`  <a href="https://github.com/${username}/${repo}">`);
+      l.push(`    <img src="https://github-readme-stats.shion.dev/api/pin/?username=${username}&repo=${repo}&theme=tokyonight&hide_border=true&icon_color=FFD700&title_color=FFD700" alt="${repo}" />`);
+      l.push(`  </a>`);
     });
-    lines.push(`</p>\n`);
-    lines.push(`<p align="center">✦ ─────────────────────────────── ✦</p>\n`);
+    l.push(`</p>\n`);
+    l.push(ELEGANT_DIV);
+    blocks.set('projects', l.join('\n'));
   }
 
-  // ═══════════════════════════════════════
-  // QUOTE: Elegant
-  // ═══════════════════════════════════════
-  if (c.showQuote) {
-    lines.push(`## ✧ Words to Code By\n`);
-    lines.push(`<p align="center">`);
-    lines.push(`  <img src="https://quotes-github-readme.vercel.app/api?type=horizontal&theme=tokyonight" alt="Quote" />`);
-    lines.push(`</p>\n`);
-    lines.push(`<p align="center">✦ ─────────────────────────────── ✦</p>\n`);
+  // QUOTE
+  {
+    const l: string[] = [];
+    l.push(`## ✧ Words to Code By\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="https://quotes-github-readme.vercel.app/api?type=horizontal&theme=tokyonight" alt="Quote" />`);
+    l.push(`</p>\n`);
+    l.push(ELEGANT_DIV);
+    blocks.set('quote', l.join('\n'));
   }
 
-  // ═══════════════════════════════════════
-  // SOCIALS: Minimal elegant links
-  // ═══════════════════════════════════════
-  const socialLinks: string[] = [];
-  if (socials.github) socialLinks.push(`[GitHub](https://github.com/${socials.github})`);
-  if (socials.linkedin) socialLinks.push(`[LinkedIn](https://linkedin.com/in/${socials.linkedin})`);
-  if (socials.twitter) socialLinks.push(`[Twitter](https://twitter.com/${socials.twitter})`);
-  if (socials.portfolio) socialLinks.push(`[Portfolio](${socials.portfolio.startsWith('http') ? socials.portfolio : 'https://' + socials.portfolio})`);
-  if (socials.email) socialLinks.push(`[Email](mailto:${socials.email})`);
-
-  if (socialLinks.length > 0) {
-    lines.push(`<p align="center">\n`);
-    lines.push(`${socialLinks.join(' ✦ ')}\n`);
-    lines.push(`</p>\n`);
+  // SOCIALS
+  {
+    const socialLinks: string[] = [];
+    if (socials.github) socialLinks.push(`[GitHub](https://github.com/${socials.github})`);
+    if (socials.linkedin) socialLinks.push(`[LinkedIn](https://linkedin.com/in/${socials.linkedin})`);
+    if (socials.twitter) socialLinks.push(`[Twitter](https://twitter.com/${socials.twitter})`);
+    if (socials.portfolio) socialLinks.push(`[Portfolio](${socials.portfolio.startsWith('http') ? socials.portfolio : 'https://' + socials.portfolio})`);
+    if (socials.email) socialLinks.push(`[Email](mailto:${socials.email})`);
+    if (socialLinks.length > 0) {
+      const l: string[] = [];
+      l.push(`<p align="center">\n`);
+      l.push(`${socialLinks.join(' ✦ ')}\n`);
+      l.push(`</p>\n`);
+      blocks.set('socials', l.join('\n'));
+    }
   }
 
-  // ═══════════════════════════════════════
-  // FOOTER: Elegant signature
-  // ═══════════════════════════════════════
-  lines.push(`<p align="center">\n`);
-  lines.push(`*✦ Crafted with precision ✦*\n`);
-  lines.push(`</p>`);
+  const body = assembleSections(blocks, input.enabledSections, input.sectionOrder, definition.sectionsSpec);
 
-  return lines.join('\n');
+  const footer = [
+    `<p align="center">\n`,
+    `*✦ Crafted with precision ✦*\n`,
+    `</p>`,
+  ].join('\n');
+
+  return body + '\n' + footer;
 };

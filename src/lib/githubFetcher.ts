@@ -54,13 +54,14 @@ export function calculateRank(stats: {
 export interface ExtendedGitHubData extends GitHubStatsData {
   rawReposData: any[]; // cached raw repos for filtering forks on the fly
   stats: {
-    totalStars: number;
+    totalStars: number;      // all owned repos incl. forks (matches shion.dev target)
+    ownedStars: number;      // non-fork only, for breakdown in UI
     totalForks: number;
     totalCommits: number;
     lifetimeCommits: number;
-    totalPRs: number;
-    totalPRReviews: number; // added
-    totalIssues: number;
+    totalPRs: number;         // all-time, all states
+    totalPRReviews: number;
+    totalIssues: number;      // all-time, all states
     totalReposCreated: number;
     contributedTo: number;
     score: number;
@@ -107,11 +108,17 @@ export async function fetchGitHubData(username: string): Promise<ExtendedGitHubD
   const rawProfile = await profileRes.json();
   const userNodeId = rawProfile.node_id;
 
-  // 2. Fetch GraphQL data (with ContributedTo, PR reviews, and isFork repo flag, without heavy nested default branch commits traversal)
+  // 2. Fetch GraphQL data. Includes:
+  //    - All-time PR/Issue totals (totalCount, all states) — Priority-1 fix
+  //    - contributionYears so we can stitch a multi-year calendar for streaks
+  //    - repositoriesContributedTo, per-repo languages, PR reviews
   const graphqlQuery = `
     query($username: String!, $cursor: String) {
       user(login: $username) {
         id
+        createdAt
+        pullRequests { totalCount }
+        issues { totalCount }
         repositoriesContributedTo(contributionTypes: [COMMIT, ISSUE, PULL_REQUEST, PULL_REQUEST_REVIEW]) {
           totalCount
         }
@@ -137,6 +144,7 @@ export async function fetchGitHubData(username: string): Promise<ExtendedGitHubD
           }
         }
         contributionsCollection {
+          contributionYears
           totalCommitContributions
           totalPullRequestContributions
           totalPullRequestReviewContributions
@@ -243,16 +251,22 @@ export async function fetchGitHubData(username: string): Promise<ExtendedGitHubD
         }
       }));
 
+      // Honest zeros — do NOT fabricate contribution totals from repo count.
+      // Better to under-report than to lie.
       userObj = {
+        createdAt: rawProfile.created_at,
+        pullRequests: { totalCount: 0 },
+        issues: { totalCount: 0 },
         repositoriesContributedTo: { totalCount: 0 },
         contributionsCollection: {
+          contributionYears: [],
           totalCommitContributions: 0,
           totalPullRequestContributions: 0,
           totalPullRequestReviewContributions: 0,
           totalIssueContributions: 0,
           totalRepositoryContributions: rawProfile.public_repos || 0,
           contributionCalendar: {
-            totalContributions: (rawProfile.public_repos || 0) * 12,
+            totalContributions: 0,
             weeks: []
           }
         }
@@ -263,16 +277,21 @@ export async function fetchGitHubData(username: string): Promise<ExtendedGitHubD
     }
   }
 
-  // Sort and process default non-fork stats
+  // ---- Stars: totalStars includes forks (matches shion.dev target of ~550).
+  //       ownedStars is exposed separately so the UI can show a breakdown.
   const ownedRepos = reposNodes.filter((r: any) => !r.isFork);
-  let totalStars = 0;
+  let totalStars = 0;    // all owned repos incl. forks
+  let ownedStars = 0;    // non-fork only
   let totalForks = 0;
-  ownedRepos.forEach((r: any) => {
+  for (const r of reposNodes) {
     totalStars += r.stargazerCount || 0;
     totalForks += r.forkCount || 0;
-  });
+  }
+  for (const r of ownedRepos) {
+    ownedStars += r.stargazerCount || 0;
+  }
 
-  // Top repositories (by stars)
+  // Top repositories (by stars) — from owned non-fork repos.
   const topRepositories: GitHubRepo[] = [...ownedRepos]
     .sort((a: any, b: any) => b.stargazerCount - a.stargazerCount)
     .slice(0, 6)
@@ -285,96 +304,123 @@ export async function fetchGitHubData(username: string): Promise<ExtendedGitHubD
       language: r.languages?.edges?.[0]?.node?.name || null,
     }));
 
-  const lastYearCommits = userObj.contributionsCollection?.totalCommitContributions || 0;
+  // ---- Multi-year contribution calendar.
+  // GitHub's contributionsCollection defaults to the last 365 days, which was
+  // producing wrong streak/total numbers for older accounts. Fetch every year
+  // the user has contributed in via aliased sub-queries in one request, then
+  // merge days across years using max-per-date (adjacent-year padding never
+  // clobbers a real count).
+  const contributionYears: number[] = userObj.contributionsCollection?.contributionYears || [];
+  const byDate: Record<string, number> = {};
+  let commitsAllYears = 0;
+  let contributionsAllYears = 0;
 
-  // Fetch lifetime commits from Commit Search API (fast, handles public commits across all repos)
-  let lifetimeCommits = lastYearCommits;
-  try {
-    console.log(`[GitHub Fetcher] Fetching lifetime commits via Search API for: ${username}`);
-    const commitsSearchRes = await fetch(`https://api.github.com/search/commits?q=author:${rawProfile.login}`, {
-      headers: {
-        ...headers,
-        Accept: 'application/vnd.github.cloak-preview+json',
-      },
-      next: { revalidate: 3600 }
-    });
-    if (commitsSearchRes.ok) {
-      const searchJson = await commitsSearchRes.json();
-      if (searchJson.total_count !== undefined) {
-        lifetimeCommits = searchJson.total_count;
-      }
-    }
-  } catch (searchErr: any) {
-    console.warn(`[GitHub Fetcher] Commit search failed: ${searchErr.message}. Defaulting to calendar contributions.`);
-  }
+  if (contributionYears.length > 0) {
+    const years = [...contributionYears].sort((a, b) => a - b);
+    const aliasBlocks = years.map((y) => {
+      const from = `${y}-01-01T00:00:00Z`;
+      const to = `${y}-12-31T23:59:59Z`;
+      return `
+        y${y}: contributionsCollection(from: "${from}", to: "${to}") {
+          totalCommitContributions
+          contributionCalendar {
+            totalContributions
+            weeks { contributionDays { contributionCount date } }
+          }
+        }`;
+    }).join('\n');
 
-  if (lifetimeCommits < lastYearCommits) {
-    lifetimeCommits = lastYearCommits;
-  }
-
-  // Process Calendar and Streaks
-  const calendar = userObj.contributionsCollection?.contributionCalendar;
-  const totalContributions = calendar?.totalContributions || 0;
-  const weeks = calendar?.weeks || [];
-  const days: Array<{ date: string; count: number }> = [];
-
-  for (const week of weeks) {
-    if (week.contributionDays) {
-      for (const day of week.contributionDays) {
-        days.push({
-          date: day.date,
-          count: day.contributionCount || 0,
-        });
-      }
-    }
-  }
-
-  days.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-  let currentStreak = 0;
-  if (days.length > 0) {
-    if (days[0].count > 0) {
-      let count = 0;
-      for (let i = 0; i < days.length; i++) {
-        if (days[i].count > 0) count++;
-        else break;
-      }
-      currentStreak = count;
-    } else if (days.length > 1 && days[1].count > 0) {
-      const d0 = new Date(days[0].date);
-      const d1 = new Date(days[1].date);
-      const diffTime = Math.abs(d0.getTime() - d1.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      if (diffDays === 1) {
-        let count = 0;
-        for (let i = 1; i < days.length; i++) {
-          if (days[i].count > 0) count++;
-          else break;
+    const multiYearQuery = `query($username: String!) { user(login: $username) { ${aliasBlocks} } }`;
+    try {
+      const myRes = await fetch('https://api.github.com/graphql', {
+        method: 'POST',
+        headers: {
+          Authorization: `bearer ${token}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({ query: multiYearQuery, variables: { username: rawProfile.login } }),
+        next: { revalidate: 3600 },
+      });
+      if (myRes.ok) {
+        const myJson: any = await myRes.json();
+        if (!myJson.errors) {
+          const u = myJson.data?.user || {};
+          for (const y of years) {
+            const cc = u[`y${y}`];
+            if (!cc) continue;
+            commitsAllYears += cc.totalCommitContributions || 0;
+            contributionsAllYears += cc.contributionCalendar?.totalContributions || 0;
+            for (const w of cc.contributionCalendar?.weeks || []) {
+              for (const d of w.contributionDays || []) {
+                // Always record the date (even count=0) so streaks see real
+                // gaps. Merge with max so an adjacent-year 0 never clobbers
+                // a real count.
+                const cur = d.contributionCount || 0;
+                const prev = byDate[d.date];
+                byDate[d.date] = prev === undefined ? cur : Math.max(prev, cur);
+              }
+            }
+          }
+        } else {
+          console.warn('[GitHub Fetcher] multi-year GraphQL errors:', myJson.errors);
         }
-        currentStreak = count;
       }
+    } catch (err: any) {
+      console.warn('[GitHub Fetcher] multi-year fetch failed:', err.message);
     }
   }
 
-  const chronologicalDays = [...days].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  let longestStreak = 0;
-  let tempStreak = 0;
-  for (const d of chronologicalDays) {
-    if (d.count > 0) {
-      tempStreak++;
-      if (tempStreak > longestStreak) {
-        longestStreak = tempStreak;
+  // Fallback: if the multi-year fetch produced nothing, seed from the
+  // last-365-day calendar we already have on userObj.
+  if (Object.keys(byDate).length === 0) {
+    const cal = userObj.contributionsCollection?.contributionCalendar;
+    for (const w of cal?.weeks || []) {
+      for (const d of w.contributionDays || []) {
+        byDate[d.date] = d.contributionCount || 0;
       }
-    } else {
-      tempStreak = 0;
     }
+    contributionsAllYears = cal?.totalContributions || 0;
+    commitsAllYears = userObj.contributionsCollection?.totalCommitContributions || 0;
+  }
+
+  const lastYearCommits = userObj.contributionsCollection?.totalCommitContributions || 0;
+  let lifetimeCommits = Math.max(commitsAllYears, lastYearCommits);
+
+  // Streak calculation over the merged multi-year calendar, clipped to
+  // [account creation, today] so future padding never counts.
+  const createdAtDate = (userObj.createdAt || rawProfile.created_at || '').slice(0, 10);
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const sortedDates = Object.keys(byDate)
+    .filter((dt) => (!createdAtDate || dt >= createdAtDate) && dt <= todayISO)
+    .sort(); // ascending YYYY-MM-DD lex == chronological
+
+  let longestStreak = 0;
+  let temp = 0;
+  for (const dt of sortedDates) {
+    if (byDate[dt] > 0) {
+      temp++;
+      if (temp > longestStreak) longestStreak = temp;
+    } else {
+      temp = 0;
+    }
+  }
+
+  // Current streak: walk back from today. Today may still be ongoing (count 0)
+  // so if the very last day is 0 we skip it and continue from the day before.
+  let currentStreak = 0;
+  for (let i = sortedDates.length - 1; i >= 0; i--) {
+    const c = byDate[sortedDates[i]] || 0;
+    if (c > 0) currentStreak++;
+    else if (i === sortedDates.length - 1) continue; // today ongoing
+    else break;
   }
 
   const streak: ContributionStreak = {
     currentStreak,
     longestStreak,
-    totalContributions,
-    contributionYears: [new Date().getFullYear()],
+    totalContributions: contributionsAllYears,
+    contributionYears: contributionYears.length ? contributionYears : [new Date().getFullYear()],
   };
 
   const contributedTo = userObj.repositoriesContributedTo?.totalCount || 0;
@@ -409,11 +455,20 @@ export async function fetchGitHubData(username: string): Promise<ExtendedGitHubD
     }))
     .sort((a, b) => b.bytes - a.bytes);
 
-  // Perform rank calculation
+  // All-time PR / issue totals (all states). GraphQL totalCount on
+  // user.pullRequests / user.issues is the field that matches shion.dev.
+  const totalPRs = userObj.pullRequests?.totalCount
+    ?? userObj.contributionsCollection?.totalPullRequestContributions
+    ?? 0;
+  const totalIssues = userObj.issues?.totalCount
+    ?? userObj.contributionsCollection?.totalIssueContributions
+    ?? 0;
+
+  // Perform rank calculation on the corrected all-time values.
   const rankObj = calculateRank({
     commits: lifetimeCommits,
-    prs: userObj.contributionsCollection?.totalPullRequestContributions || 0,
-    issues: userObj.contributionsCollection?.totalIssueContributions || 0,
+    prs: totalPRs,
+    issues: totalIssues,
     stars: totalStars,
     followers: followers,
     repos: publicRepos,
@@ -440,12 +495,13 @@ export async function fetchGitHubData(username: string): Promise<ExtendedGitHubD
     profile,
     stats: {
       totalStars,
+      ownedStars,
       totalForks,
       totalCommits: lastYearCommits,
       lifetimeCommits,
-      totalPRs: userObj.contributionsCollection?.totalPullRequestContributions || 0,
+      totalPRs,
       totalPRReviews: userObj.contributionsCollection?.totalPullRequestReviewContributions || 0,
-      totalIssues: userObj.contributionsCollection?.totalIssueContributions || 0,
+      totalIssues,
       totalReposCreated: publicRepos,
       contributedTo,
       score: rankObj.score,

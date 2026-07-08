@@ -1609,6 +1609,36 @@ export default function Inspector() {
           );
         })()}
 
+        {type === 'activity-graph' && (() => {
+          return (
+            <div className="space-y-4">
+              <p className="text-xs text-zinc-400 leading-relaxed bg-zinc-900/50 border border-white/5 rounded-lg p-3">
+                Displays a beautiful graphic representation of your GitHub contributions. The colors of the graph are dynamically matched to the active theme style.
+              </p>
+            </div>
+          );
+        })()}
+
+        {type === 'snake-game' && (() => {
+          return (
+            <div className="space-y-4">
+              <p className="text-xs text-zinc-400 leading-relaxed bg-zinc-900/50 border border-white/5 rounded-lg p-3">
+                Generates an animation of a snake eating your contribution grid. Note: You will need to set up a GitHub Action in your profile repository to generate the SVGs for this animation.
+              </p>
+            </div>
+          );
+        })()}
+
+        {type === 'goals-list' && (() => {
+          return (
+            <div className="space-y-4">
+              <p className="text-xs text-zinc-400 leading-relaxed bg-zinc-900/50 border border-white/5 rounded-lg p-3">
+                Displays a structured table showcasing your learning path and goals. This is customized based on the topics you are currently exploring.
+              </p>
+            </div>
+          );
+        })()}
+
         {type === 'custom' && (() => {
           const customConfig = config.custom || { markdown: '' };
           return (

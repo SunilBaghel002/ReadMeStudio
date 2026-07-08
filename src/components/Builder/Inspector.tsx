@@ -1366,6 +1366,13 @@ export default function Inspector() {
                   />
                 </div>
                 <div className="flex justify-between items-center py-1 select-none">
+                  <span className="text-xs text-zinc-400">Show Next Rank Label</span>
+                  <CustomToggle
+                    checked={trophyConfig.showNextRank !== false}
+                    onChange={(checked) => handleConfigChange('trophies', { showNextRank: checked })}
+                  />
+                </div>
+                <div className="flex justify-between items-center py-1 select-none">
                   <span className="text-xs text-zinc-400">Show Category Titles</span>
                   <CustomToggle
                     checked={trophyConfig.showCategoryLabels !== false}

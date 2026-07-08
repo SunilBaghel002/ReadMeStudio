@@ -1082,16 +1082,35 @@ export const TrophiesCardPreview = ({ stats, profile }: { stats: any; profile: a
               {/* Level Stats value centered cleanly below */}
               <span className="text-xs font-black font-mono mt-2 text-white block">{tr.value}</span>
               
-              {showProgress && tr.rank !== 'SSS' && tr.rank !== 'Unranked' && (
-                <span className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden mt-3 block">
-                  <span 
-                    className="h-full block" 
-                    style={{ 
-                      width: `${tr.progress}%`, 
-                      background: tr.color.startsWith('linear-gradient') ? 'linear-gradient(to right, #ec4899, #a855f7)' : tr.color 
-                    }} 
-                  />
-                </span>
+              {showProgress && (
+                <div className="w-full mt-2 space-y-1">
+                  <span className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden block">
+                    <span 
+                      className="h-full block" 
+                      style={{ 
+                        width: `${tr.rank === 'SSS' ? 100 : tr.progress}%`, 
+                        background: tr.color.startsWith('linear-gradient') ? 'linear-gradient(to right, #ec4899, #a855f7)' : (tr.color === '#a1a1aa' ? '#52525b' : tr.color) 
+                      }} 
+                    />
+                  </span>
+                  {tr.rank !== 'SSS' && (
+                    <span className="block text-[8px] text-zinc-500 font-mono text-center leading-none">
+                      {tr.value} / {tr.nextVal}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {showNextRank && (
+                <div className="text-[8.5px] font-mono mt-1.5 w-full text-center select-none truncate leading-none">
+                  {tr.rank === 'SSS' ? (
+                    <span className="text-yellow-400 font-bold">MAX RANK! 👑</span>
+                  ) : (
+                    <span className="text-zinc-400 font-medium">
+                      +{tr.nextVal - tr.value} to reach <strong style={{ color: tr.color.startsWith('linear-gradient') ? '#ec4899' : tr.color }}>{tr.nextRank}</strong>
+                    </span>
+                  )}
+                </div>
               )}
             </span>
           ))}

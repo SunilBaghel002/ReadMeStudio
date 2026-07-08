@@ -1,5 +1,7 @@
 import { ThemeDefinition, ThemeGenerator, ThemeGeneratorInput } from '@/types/theme.types';
 import { SKILL_BADGES } from '@/lib/markdown';
+import type { SectionType } from '@/types/github.types';
+import { assembleSections } from './assemble';
 
 export const definition: ThemeDefinition = {
   id: 'gradient-wave',
@@ -28,84 +30,112 @@ export const definition: ThemeDefinition = {
   },
   statsTheme: 'dracula',
   badgeStyle: 'plastic',
+  sectionsSpec: {
+    order: ['header', 'typing', 'about', 'goals-list', 'skills', 'stats', 'trophies', 'activity-graph', 'snake-game', 'quote', 'projects', 'socials', 'visitor-counter'],
+    enabled: ['header', 'typing', 'about', 'goals-list', 'skills', 'stats', 'trophies', 'activity-graph', 'snake-game', 'quote', 'socials', 'visitor-counter'],
+  },
 };
 
 export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => {
-  const { username, name, bio, skills, selectedRepos, socials, customization, baseUrl } = input;
+  const { username, name, bio, skills, selectedRepos, socials, customization } = input;
   const c = customization;
+  
   const primaryClean = c.primaryColor.replace('#', '');
   const secondaryClean = c.secondaryColor.replace('#', '');
   const accentClean = c.accentColor.replace('#', '');
-  const lines: string[] = [];
+  const statsTheme = input.statsTheme || definition.statsTheme || 'dracula';
 
-  // ═══════════════════════════════════════
-  // HEADER: Waving capsule-render banner
-  // ═══════════════════════════════════════
-  lines.push(`<p align="center">`);
-  lines.push(`  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=12,9,30&height=200&section=header&text=${encodeURIComponent(c.customTitle || name)}&fontSize=42&fontColor=ffffff&animation=fadeIn&fontAlignY=35&desc=${encodeURIComponent(c.customTagline || bio)}&descSize=16&descAlignY=55" width="100%" alt="Header" />`);
-  lines.push(`</p>\n`);
+  const blocks = new Map<SectionType, string>();
 
-  // ═══════════════════════════════════════
-  // TYPING ANIMATION
-  // ═══════════════════════════════════════
-  if (c.showTypingAnimation) {
-    const typingLines = [
-      `Full Stack Developer`,
-      `Open Source Enthusiast`,
-      `Building things that matter`,
-      `Always learning, always growing`,
-    ];
-    const linesParam = typingLines.map(l => encodeURIComponent(l)).join(';');
-    lines.push(`<p align="center">`);
-    lines.push(`  <a href="https://git.io/typing-svg">`);
-    lines.push(`    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=28&duration=3000&pause=1000&color=${primaryClean}&center=true&vCenter=true&multiline=true&width=700&height=60&lines=${linesParam}" alt="Typing SVG" />`);
-    lines.push(`  </a>`);
-    lines.push(`</p>\n`);
+  // HEADER
+  {
+    const l: string[] = [];
+    l.push(`<p align="center">`);
+    l.push(`  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=${primaryClean},${secondaryClean},${accentClean}&height=200&section=header&text=${encodeURIComponent(c.customTitle || name)}&fontSize=42&fontColor=ffffff&animation=fadeIn&fontAlignY=35&desc=${encodeURIComponent(c.customTagline || bio)}&descSize=16&descAlignY=55" width="100%" alt="Header" />`);
+    l.push(`</p>\n`);
+    blocks.set('header', l.join('\n'));
   }
 
-  // ═══════════════════════════════════════
-  // ABOUT ME: Code block style
-  // ═══════════════════════════════════════
-  lines.push(`## 💫 About Me\n`);
-  lines.push('```javascript');
-  lines.push(`const developer = {`);
-  lines.push(`  name: "${name}",`);
-  lines.push(`  role: "${c.customTagline || 'Full Stack Developer'}",`);
-  lines.push(`  languages: [${skills.slice(0, 5).map(s => `"${s}"`).join(', ')}],`);
-  if (input.currentProject) {
-    lines.push(`  currentProject: "${input.currentProject}",`);
-  }
-  if (input.learning) {
-    lines.push(`  learning: "${input.learning}",`);
-  }
-  lines.push(`  funFact: "I code with coffee and lo-fi beats ☕🎵"`);
-  lines.push(`};`);
-  lines.push('```\n');
-
-  if (bio) {
-    lines.push(`> ${bio}\n`);
+  // TYPING
+  {
+    const linesToUse = (input.typingLines && input.typingLines.length > 0)
+      ? input.typingLines
+      : [
+          `Full Stack Developer`,
+          `Open Source Enthusiast`,
+          `Building things that matter`,
+          `Always learning, always growing`,
+        ];
+    const linesParam = linesToUse.map(line => encodeURIComponent(line)).join(';');
+    const l: string[] = [];
+    l.push(`<p align="center">`);
+    l.push(`  <a href="https://git.io/typing-svg">`);
+    l.push(`    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=24&duration=3000&pause=1000&color=${primaryClean}&center=true&vCenter=true&width=700&height=50&lines=${linesParam}" alt="Typing SVG" />`);
+    l.push(`  </a>`);
+    l.push(`</p>\n`);
+    blocks.set('typing', l.join('\n'));
   }
 
-  const aboutEmojis = c.emojiLevel !== 'none';
-  if (input.currentProject) {
-    lines.push(`${aboutEmojis ? '🔭' : '-'} I'm currently working on **${input.currentProject}**`);
+  // ABOUT (Side-by-side with Coding GIF)
+  {
+    const l: string[] = [];
+    l.push(`## 💫 About Me\n`);
+    l.push(`<table>`);
+    l.push(`  <tr>`);
+    l.push(`    <td width="60%" valign="top">\n`);
+    l.push('```javascript');
+    l.push(`const developer = {`);
+    l.push(`  name: "${name}",`);
+    l.push(`  role: "${c.customTagline || 'Full Stack Developer'}",`);
+    l.push(`  languages: [${skills.slice(0, 5).map(s => `"${s}"`).join(', ')}],`);
+    if (input.currentProject) l.push(`  currentProject: "${input.currentProject}",`);
+    if (input.learning) l.push(`  learning: "${input.learning}",`);
+    l.push(`  funFact: "I code with coffee and lo-fi beats ☕🎵"`);
+    l.push(`};`);
+    l.push('```\n');
+    l.push(`    </td>`);
+    l.push(`    <td width="40%" align="center" valign="middle">`);
+    l.push(`      <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbW51bm5mNWp3bnQwaHk1azlndmRycjM1cWRicTRiY2U5Mzgwd2c1byZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/L13yIHSgrC7yC7Ma5B/giphy.gif" width="180" alt="Coding GIF" />`);
+    l.push(`    </td>`);
+    l.push(`  </tr>`);
+    l.push(`</table>\n`);
+    
+    if (bio) {
+      l.push(`> ${bio}\n`);
+    }
+    
+    const aboutEmojis = c.emojiLevel !== 'none';
+    if (input.currentProject) l.push(`${aboutEmojis ? '🔭' : '-'} I'm currently working on [**${input.currentProject}**](${input.currentProjectUrl || '#'})`);
+    if (input.learning) l.push(`${aboutEmojis ? '🌱' : '-'} I'm currently learning **${input.learning}**`);
+    if (input.collab) l.push(`${aboutEmojis ? '👯' : '-'} I'm looking to collaborate on **${input.collab}**`);
+    l.push('');
+    l.push(`---\n`);
+    blocks.set('about', l.join('\n'));
   }
-  if (input.learning) {
-    lines.push(`${aboutEmojis ? '🌱' : '-'} I'm currently learning **${input.learning}**`);
-  }
-  if (input.collab) {
-    lines.push(`${aboutEmojis ? '👯' : '-'} I'm looking to collaborate on **${input.collab}**`);
-  }
-  lines.push('');
 
-  lines.push(`---\n`);
+  // GOALS LIST (Goals table)
+  {
+    const l: string[] = [];
+    l.push(`## 🎯 2025 Learning Goals\n`);
+    l.push(`| Goal | Status | Timeline |`);
+    l.push(`|------|--------|----------|`);
+    l.push(`| Master Next.js and Server Components | 📖 In Progress | Q3 2025 |`);
+    l.push(`| Build 5+ open-source developer tool projects | 🚀 Planned | Q4 2025 |`);
+    if (input.learning) {
+      l.push(`| Expand knowledge in: **${input.learning}** | 📖 Learning | Ongoing |`);
+    } else {
+      l.push(`| Deepen knowledge in systems programming & Rust | 🌟 Ongoing | 2025 |`);
+    }
+    l.push('');
+    l.push(`---\n`);
+    blocks.set('goals-list', l.join('\n'));
+  }
 
-  // ═══════════════════════════════════════
-  // TECH STACK: Plastic badges in single row
-  // ═══════════════════════════════════════
+  // SKILLS
   if (skills.length > 0) {
-    lines.push(`## 🛠️ Tech Stack\n`);
-    lines.push(`<p align="${c.alignment}">`);
+    const l: string[] = [];
+    l.push(`## 🛠️ Tech Stack\n`);
+    l.push(`<p align="${c.alignment}">`);
     const badges = skills.map(skill => {
       const details = SKILL_BADGES[skill];
       if (details) {
@@ -113,117 +143,123 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
       }
       return `  <img src="https://img.shields.io/badge/${encodeURIComponent(skill)}-${primaryClean}?style=plastic" alt="${skill}" />`;
     });
-    lines.push(badges.join('\n'));
-    lines.push(`</p>\n`);
-    lines.push(`---\n`);
+    l.push(badges.join('\n'));
+    l.push(`</p>\n`);
+    l.push(`---\n`);
+    blocks.set('skills', l.join('\n'));
   }
 
-  // ═══════════════════════════════════════
-  // STATS: Stacked vertically
-  // ═══════════════════════════════════════
-  lines.push(`## 📊 GitHub Stats\n`);
-  lines.push(`<p align="center">`);
-  lines.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=dracula&hide_border=true&include_all_commits=true&show_icons=true" alt="GitHub Stats" />`);
-  lines.push(`  <br/>`);
-  lines.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=dracula&hide_border=true" alt="GitHub Streak" />`);
-  lines.push(`  <br/>`);
-  lines.push(`  <img src="${baseUrl}/api/github/languages?username=${username}&theme=dracula&hide_border=true&langs_count=8" alt="Top Languages" />`);
-  lines.push(`</p>\n`);
+  // STATS (Stacked vertically using external shion.dev / demolab APIs)
+  {
+    const l: string[] = [];
+    l.push(`## 📊 GitHub Stats\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="https://github-readme-stats.shion.dev/api?username=${username}&theme=${statsTheme}&hide_border=true&include_all_commits=true&count_private=true" alt="GitHub Stats" />`);
+    l.push(`  <br/>`);
+    l.push(`  <img src="https://streak-stats.demolab.com/?user=${username}&theme=${statsTheme}&hide_border=true" alt="GitHub Streak" />`);
+    l.push(`  <br/>`);
+    l.push(`  <img src="https://github-readme-stats.shion.dev/api/top-langs/?username=${username}&theme=${statsTheme}&hide_border=true&include_all_commits=true&count_private=true&layout=compact" alt="Top Languages" />`);
+    l.push(`</p>\n`);
+    l.push(`---\n`);
+    blocks.set('stats', l.join('\n'));
+  }
 
-  lines.push(`---\n`);
-
-  // ═══════════════════════════════════════
   // TROPHIES
-  // ═══════════════════════════════════════
-  if (c.showTrophies) {
-    lines.push(`## 🏆 GitHub Trophies\n`);
-    lines.push(`<p align="center">`);
-    lines.push(`  <img src="${baseUrl}/api/github/trophies?username=${username}&theme=dracula&no_frame=true&no_bg=true&column_count=4" alt="Trophies" />`);
-    lines.push(`</p>\n`);
-    lines.push(`---\n`);
+  {
+    const l: string[] = [];
+    l.push(`## 🏆 GitHub Trophies\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="https://github-profile-trophy.vercel.app/?username=${username}&theme=${statsTheme}&no-frame=true&no-bg=true&margin-w=4&margin-h=4" alt="Trophies" />`);
+    l.push(`</p>\n`);
+    l.push(`---\n`);
+    blocks.set('trophies', l.join('\n'));
   }
 
-  // ═══════════════════════════════════════
-  // CONTRIBUTION GRAPH
-  // ═══════════════════════════════════════
-  if (c.showContributionGraph) {
-    lines.push(`## 📈 Contribution Graph\n`);
-    lines.push(`<p align="center">`);
-    lines.push(`  <img src="https://github-readme-activity-graph.vercel.app/graph?username=${username}&bg_color=0d1117&color=667eea&line=764ba2&point=f093fb&area=true&hide_border=true" alt="Contribution Graph" />`);
-    lines.push(`</p>\n`);
-    lines.push(`---\n`);
+  // ACTIVITY GRAPH
+  {
+    const l: string[] = [];
+    l.push(`## 📈 Contribution Graph\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="https://github-readme-activity-graph.vercel.app/graph?username=${username}&bg_color=0d1117&color=${primaryClean}&line=${secondaryClean}&point=${accentClean}&area=true&hide_border=true" alt="Contribution Graph" />`);
+    l.push(`</p>\n`);
+    l.push(`---\n`);
+    blocks.set('activity-graph', l.join('\n'));
   }
 
-  // ═══════════════════════════════════════
-  // SNAKE ANIMATION
-  // ═══════════════════════════════════════
-  if (c.showSnakeAnimation) {
-    lines.push(`## 🐍 Contribution Snake\n`);
-    lines.push(`<p align="center">`);
-    lines.push(`  <img src="https://raw.githubusercontent.com/${username}/${username}/output/github-snake-dark.svg" alt="Snake animation" />`);
-    lines.push(`</p>\n`);
-    lines.push(`---\n`);
+  // SNAKE
+  {
+    const l: string[] = [];
+    l.push(`## 🐍 Contribution Snake\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="https://raw.githubusercontent.com/${username}/${username}/output/github-snake-dark.svg" alt="Snake animation" />`);
+    l.push(`</p>\n`);
+    l.push(`---\n`);
+    blocks.set('snake-game', l.join('\n'));
   }
 
-  // ═══════════════════════════════════════
-  // DEV QUOTE
-  // ═══════════════════════════════════════
-  if (c.showQuote) {
-    lines.push(`## ✍️ Random Dev Quote\n`);
-    lines.push(`<p align="center">`);
-    lines.push(`  <img src="https://quotes-github-readme.vercel.app/api?type=horizontal&theme=tokyonight" alt="Dev Quote" />`);
-    lines.push(`</p>\n`);
-    lines.push(`---\n`);
+  // QUOTE
+  {
+    const l: string[] = [];
+    l.push(`## ✍️ Random Dev Quote\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="https://quotes-github-readme.vercel.app/api?type=horizontal&theme=tokyonight" alt="Dev Quote" />`);
+    l.push(`</p>\n`);
+    l.push(`---\n`);
+    blocks.set('quote', l.join('\n'));
   }
 
-  // ═══════════════════════════════════════
-  // FEATURED REPOS
-  // ═══════════════════════════════════════
+  // PROJECTS
   if (selectedRepos.length > 0) {
-    lines.push(`## 💻 Featured Projects\n`);
-    lines.push(`<p align="center">`);
+    const l: string[] = [];
+    l.push(`## 💻 Featured Projects\n`);
+    l.push(`<p align="center">`);
     selectedRepos.forEach(repo => {
-      lines.push(`  <a href="https://github.com/${username}/${repo}">`);
-      lines.push(`    <img src="https://github-readme-stats.shion.dev/api/pin/?username=${username}&repo=${repo}&theme=dracula&hide_border=true" alt="${repo}" />`);
-      lines.push(`  </a>`);
+      l.push(`  <a href="https://github.com/${username}/${repo}">`);
+      l.push(`    <img src="https://github-readme-stats.shion.dev/api/pin/?username=${username}&repo=${repo}&theme=${statsTheme}&hide_border=true" alt="${repo}" />`);
+      l.push(`  </a>`);
     });
-    lines.push(`</p>\n`);
-    lines.push(`---\n`);
+    l.push(`</p>\n`);
+    l.push(`---\n`);
+    blocks.set('projects', l.join('\n'));
   }
 
-  // ═══════════════════════════════════════
   // SOCIALS
-  // ═══════════════════════════════════════
-  const socialBadges: string[] = [];
-  if (socials.github) socialBadges.push(`[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/${socials.github})`);
-  if (socials.linkedin) socialBadges.push(`[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/${socials.linkedin})`);
-  if (socials.twitter) socialBadges.push(`[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com/${socials.twitter})`);
-  if (socials.portfolio) socialBadges.push(`[![Portfolio](https://img.shields.io/badge/Portfolio-FF5722?style=for-the-badge&logo=google-chrome&logoColor=white)](${socials.portfolio.startsWith('http') ? socials.portfolio : 'https://' + socials.portfolio})`);
-  if (socials.email) socialBadges.push(`[![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:${socials.email})`);
-
-  if (socialBadges.length > 0) {
-    lines.push(`## 🌐 Connect With Me\n`);
-    lines.push(`<p align="center">`);
-    lines.push(`  ${socialBadges.join(' ')}`);
-    lines.push(`</p>\n`);
-    lines.push(`---\n`);
+  {
+    const socialBadges: string[] = [];
+    if (socials.github) socialBadges.push(`[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/${socials.github})`);
+    if (socials.linkedin) socialBadges.push(`[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/${socials.linkedin})`);
+    if (socials.twitter) socialBadges.push(`[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com/${socials.twitter})`);
+    if (socials.portfolio) socialBadges.push(`[![Portfolio](https://img.shields.io/badge/Portfolio-FF5722?style=for-the-badge&logo=google-chrome&logoColor=white)](${socials.portfolio.startsWith('http') ? socials.portfolio : 'https://' + socials.portfolio})`);
+    if (socials.email) socialBadges.push(`[![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:${socials.email})`);
+    if (socialBadges.length > 0) {
+      const l: string[] = [];
+      l.push(`## 🌐 Connect With Me\n`);
+      l.push(`<p align="center">`);
+      l.push(`  ${socialBadges.join(' ')}`);
+      l.push(`</p>\n`);
+      l.push(`---\n`);
+      blocks.set('socials', l.join('\n'));
+    }
   }
 
-  // ═══════════════════════════════════════
   // VISITOR COUNTER
-  // ═══════════════════════════════════════
-  if (c.showVisitorCounter) {
-    lines.push(`<p align="center">`);
-    lines.push(`  <img src="https://komarev.com/ghpvc/?username=${username}&style=for-the-badge&color=${primaryClean}" alt="Profile Views" />`);
-    lines.push(`</p>\n`);
+  {
+    const l: string[] = [];
+    l.push(`<p align="center">`);
+    l.push(`  <img src="https://komarev.com/ghpvc/?username=${username}&style=for-the-badge&color=${primaryClean}" alt="Profile Views" />`);
+    l.push(`</p>\n`);
+    blocks.set('visitor-counter', l.join('\n'));
   }
 
-  // ═══════════════════════════════════════
-  // FOOTER: Waving capsule-render
-  // ═══════════════════════════════════════
-  lines.push(`<p align="center">`);
-  lines.push(`  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=12,9,30&height=120&section=footer" width="100%" alt="Footer" />`);
-  lines.push(`</p>`);
+  // Assemble in user's order, filtered by enabled sections
+  const body = assembleSections(blocks, input.enabledSections, input.sectionOrder, definition.sectionsSpec);
 
-  return lines.join('\n');
-};
+  // Footer (always rendered)
+  const footer = [
+    `<p align="center">`,
+    `  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=${primaryClean},${secondaryClean},${accentClean}&height=120&section=footer" width="100%" alt="Footer" />`,
+    `</p>`,
+  ].join('\n');
+
+  return body + '\n' + footer;
+}

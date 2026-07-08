@@ -1,3 +1,10 @@
+import type { SectionType } from './github.types';
+
+export interface ThemeSectionsSpec {
+  order: SectionType[];
+  enabled: SectionType[];
+}
+
 export interface ThemeDefinition {
   id: string;
   name: string;
@@ -13,6 +20,7 @@ export interface ThemeDefinition {
   defaultConfig: ThemeCustomization;
   statsTheme: string;
   badgeStyle: string;
+  sectionsSpec: ThemeSectionsSpec;
 }
 
 export interface ThemeCustomization {
@@ -51,6 +59,10 @@ export interface ThemeGeneratorInput {
   learning?: string;
   collab?: string;
   baseUrl: string;
+  enabledSections?: Set<SectionType>;
+  sectionOrder?: SectionType[];
+  typingLines?: string[];
+  statsTheme?: string;
 }
 
 export type ThemeGenerator = (input: ThemeGeneratorInput) => string;

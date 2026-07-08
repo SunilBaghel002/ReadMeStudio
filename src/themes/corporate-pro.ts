@@ -1,5 +1,7 @@
 import { ThemeDefinition, ThemeGenerator, ThemeGeneratorInput } from '@/types/theme.types';
 import { SKILL_BADGES } from '@/lib/markdown';
+import type { SectionType } from '@/types/github.types';
+import { assembleSections } from './assemble';
 
 export const definition: ThemeDefinition = {
   id: 'corporate-pro',
@@ -28,63 +30,57 @@ export const definition: ThemeDefinition = {
   },
   statsTheme: 'default',
   badgeStyle: 'for-the-badge',
+  sectionsSpec: {
+    order: ['header', 'typing', 'about', 'skills', 'working-on', 'stats', 'projects', 'socials', 'visitor-counter'],
+    enabled: ['header', 'typing', 'about', 'skills', 'stats', 'socials', 'visitor-counter'],
+  },
 };
 
 export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => {
   const { username, name, bio, skills, selectedRepos, socials, customization, baseUrl } = input;
   const c = customization;
-  const lines: string[] = [];
+  const blocks = new Map<SectionType, string>();
 
-  // ═══════════════════════════════════════
-  // HEADER: Professional corporate banner
-  // ═══════════════════════════════════════
-  lines.push(`<p align="center">`);
-  lines.push(`  <img src="https://capsule-render.vercel.app/api?type=rect&color=0077B5&height=120&section=header&text=${encodeURIComponent(c.customTitle || name)}&fontSize=36&fontColor=ffffff&fontAlignY=50" width="100%" alt="Header" />`);
-  lines.push(`</p>\n`);
+  // HEADER
+  {
+    const l: string[] = [];
+    l.push(`<p align="center">`);
+    l.push(`  <img src="https://capsule-render.vercel.app/api?type=rect&color=0077B5&height=120&section=header&text=${encodeURIComponent(c.customTitle || name)}&fontSize=36&fontColor=ffffff&fontAlignY=50" width="100%" alt="Header" />`);
+    l.push(`</p>\n`);
+    l.push(`<div align="center">\n`);
+    l.push(`  <img src="https://github.com/${username}.png" alt="Profile" width="120" height="120" style="border-radius: 50%; border: 3px solid #0077B5" />\n`);
+    l.push(`  ### ${c.customTitle || name}`);
+    l.push(`  **${c.customTagline || bio || 'Software Engineer'}**\n`);
+    l.push(`</div>\n`);
+    blocks.set('header', l.join('\n'));
+  }
 
-  // ═══════════════════════════════════════
-  // PROFESSIONAL TITLE BLOCK
-  // ═══════════════════════════════════════
-  lines.push(`<div align="center">\n`);
-  lines.push(`  <img src="https://github.com/${username}.png" alt="Profile" width="120" height="120" style="border-radius: 50%; border: 3px solid #0077B5" />\n`);
-  lines.push(`  ### ${c.customTitle || name}`);
-  lines.push(`  **${c.customTagline || bio || 'Software Engineer'}**\n`);
-  lines.push(`</div>\n`);
-
-  // Typing: corporate style
-  if (c.showTypingAnimation) {
-    const typingLines = [
-      `Software Engineer`,
-      `Full Stack Developer`,
-      `Technology Consultant`,
-      `Open to Opportunities`,
-    ];
+  // TYPING
+  {
+    const typingLines = [`Software Engineer`, `Full Stack Developer`, `Technology Consultant`, `Open to Opportunities`];
     const linesParam = typingLines.map(l => encodeURIComponent(l)).join(';');
-    lines.push(`<p align="center">`);
-    lines.push(`  <img src="https://readme-typing-svg.demolab.com?font=Inter&weight=500&size=20&duration=4000&pause=1500&color=0077B5&center=true&vCenter=true&width=500&height=35&lines=${linesParam}" alt="Typing" />`);
-    lines.push(`</p>\n`);
+    const l: string[] = [];
+    l.push(`<p align="center">`);
+    l.push(`  <img src="https://readme-typing-svg.demolab.com?font=Inter&weight=500&size=20&duration=4000&pause=1500&color=0077B5&center=true&vCenter=true&width=500&height=35&lines=${linesParam}" alt="Typing" />`);
+    l.push(`</p>\n`);
+    l.push(`---\n`);
+    blocks.set('typing', l.join('\n'));
   }
 
-  lines.push(`---\n`);
-
-  // ═══════════════════════════════════════
-  // PROFESSIONAL SUMMARY
-  // ═══════════════════════════════════════
-  lines.push(`## Professional Summary\n`);
-  if (bio) {
-    lines.push(`${bio}\n`);
+  // ABOUT
+  {
+    const l: string[] = [];
+    l.push(`## Professional Summary\n`);
+    if (bio) l.push(`${bio}\n`);
+    l.push(`Experienced software professional with a proven track record of delivering high-quality solutions. Passionate about clean architecture, best practices, and continuous learning.\n`);
+    l.push(`---\n`);
+    blocks.set('about', l.join('\n'));
   }
-  lines.push(`Experienced software professional with a proven track record of delivering high-quality solutions. Passionate about clean architecture, best practices, and continuous learning.\n`);
 
-  lines.push(`---\n`);
-
-  // ═══════════════════════════════════════
-  // CORE COMPETENCIES
-  // ═══════════════════════════════════════
+  // SKILLS
   if (skills.length > 0) {
-    lines.push(`## Core Competencies\n`);
-
-    // Categorize skills
+    const l: string[] = [];
+    l.push(`## Core Competencies\n`);
     const categories: { title: string; match: string[] }[] = [
       { title: 'Programming Languages', match: ['JavaScript', 'TypeScript', 'Python', 'Java', 'Go', 'Rust', 'Ruby', 'PHP', 'Kotlin', 'C', 'Solidity'] },
       { title: 'Frontend Frameworks', match: ['React', 'Next.js', 'Vue', 'Angular', 'Svelte', 'TailwindCSS', 'Bootstrap', 'Sass', 'FramerMotion', 'Three.js'] },
@@ -92,121 +88,115 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
       { title: 'Databases & Storage', match: ['PostgreSQL', 'MongoDB', 'MySQL', 'Redis', 'Firebase', 'Supabase', 'Prisma', 'SQLite'] },
       { title: 'DevOps & Cloud', match: ['Docker', 'Kubernetes', 'Git', 'GitHub Actions', 'Linux', 'AWS', 'Vercel', 'Netlify', 'Heroku', 'Nginx'] },
     ];
-
     categories.forEach(cat => {
       const matching = skills.filter(s => cat.match.includes(s));
       if (matching.length === 0) return;
-      lines.push(`### ${cat.title}\n`);
+      l.push(`### ${cat.title}\n`);
       const badges = matching.map(skill => {
         const details = SKILL_BADGES[skill];
-        if (details) {
-          return `![${skill}](https://img.shields.io/badge/${encodeURIComponent(details.label)}-${details.color}?style=for-the-badge&logo=${details.logo}&logoColor=white)`;
-        }
+        if (details) return `![${skill}](https://img.shields.io/badge/${encodeURIComponent(details.label)}-${details.color}?style=for-the-badge&logo=${details.logo}&logoColor=white)`;
         return `![${skill}](https://img.shields.io/badge/${encodeURIComponent(skill)}-0077B5?style=for-the-badge)`;
       });
-      lines.push(badges.join(' '));
-      lines.push('');
+      l.push(badges.join(' '));
+      l.push('');
     });
-
-    // Uncategorized
     const allCategorized = categories.flatMap(c => c.match);
     const uncategorized = skills.filter(s => !allCategorized.includes(s));
     if (uncategorized.length > 0) {
-      lines.push(`### Additional Tools\n`);
+      l.push(`### Additional Tools\n`);
       const badges = uncategorized.map(skill => {
         const details = SKILL_BADGES[skill];
-        if (details) {
-          return `![${skill}](https://img.shields.io/badge/${encodeURIComponent(details.label)}-${details.color}?style=for-the-badge&logo=${details.logo}&logoColor=white)`;
-        }
+        if (details) return `![${skill}](https://img.shields.io/badge/${encodeURIComponent(details.label)}-${details.color}?style=for-the-badge&logo=${details.logo}&logoColor=white)`;
         return `![${skill}](https://img.shields.io/badge/${encodeURIComponent(skill)}-0077B5?style=for-the-badge)`;
       });
-      lines.push(badges.join(' '));
-      lines.push('');
+      l.push(badges.join(' '));
+      l.push('');
     }
-
-    lines.push(`---\n`);
+    l.push(`---\n`);
+    blocks.set('skills', l.join('\n'));
   }
 
-  // ═══════════════════════════════════════
-  // CAREER HIGHLIGHTS / FOCUS AREAS
-  // ═══════════════════════════════════════
-  const hasWorkingOn = input.currentProject || input.learning || input.collab;
-  if (hasWorkingOn) {
-    lines.push(`## Current Focus\n`);
-    lines.push(`| Area | Details |`);
-    lines.push(`|------|---------|`);
-    if (input.currentProject) lines.push(`| **Active Project** | [${input.currentProject}](${input.currentProjectUrl || '#'}) |`);
-    if (input.learning) lines.push(`| **Professional Development** | ${input.learning} |`);
-    if (input.collab) lines.push(`| **Collaboration Interests** | ${input.collab} |`);
-    lines.push('');
-    lines.push(`---\n`);
+  // WORKING-ON
+  {
+    const hasWorkingOn = input.currentProject || input.learning || input.collab;
+    if (hasWorkingOn) {
+      const l: string[] = [];
+      l.push(`## Current Focus\n`);
+      l.push(`| Area | Details |`);
+      l.push(`|------|---------|`);
+      if (input.currentProject) l.push(`| **Active Project** | [${input.currentProject}](${input.currentProjectUrl || '#'}) |`);
+      if (input.learning) l.push(`| **Professional Development** | ${input.learning} |`);
+      if (input.collab) l.push(`| **Collaboration Interests** | ${input.collab} |`);
+      l.push('');
+      l.push(`---\n`);
+      blocks.set('working-on', l.join('\n'));
+    }
   }
 
-  // ═══════════════════════════════════════
-  // PERFORMANCE METRICS
-  // ═══════════════════════════════════════
-  lines.push(`## Performance Metrics\n`);
-  lines.push(`<p align="center">`);
-  lines.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=default&hide_border=true&show_icons=true&include_all_commits=true&bg_color=ffffff&title_color=0077B5&text_color=333333&icon_color=0077B5" alt="GitHub Stats" />`);
-  lines.push(`</p>\n`);
-
-  if (c.showContributionGraph) {
-    lines.push(`<p align="center">`);
-    lines.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=default&hide_border=true&ring=0077B5&fire=004182&currStreakLabel=0077B5" alt="Streak" />`);
-    lines.push(`</p>\n`);
+  // STATS
+  {
+    const l: string[] = [];
+    l.push(`## Performance Metrics\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=default&hide_border=true&show_icons=true&include_all_commits=true&bg_color=ffffff&title_color=0077B5&text_color=333333&icon_color=0077B5" alt="GitHub Stats" />`);
+    l.push(`</p>\n`);
+    l.push(`<p align="center">`);
+    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=default&hide_border=true&ring=0077B5&fire=004182&currStreakLabel=0077B5" alt="Streak" />`);
+    l.push(`</p>\n`);
+    l.push(`---\n`);
+    blocks.set('stats', l.join('\n'));
   }
 
-  lines.push(`---\n`);
-
-  // ═══════════════════════════════════════
-  // FEATURED PROJECTS (as table)
-  // ═══════════════════════════════════════
+  // PROJECTS
   if (selectedRepos.length > 0) {
-    lines.push(`## Recent Projects\n`);
-    lines.push(`| Project | Description | Link |`);
-    lines.push(`|---------|-------------|------|`);
+    const l: string[] = [];
+    l.push(`## Recent Projects\n`);
+    l.push(`| Project | Description | Link |`);
+    l.push(`|---------|-------------|------|`);
     selectedRepos.forEach(repo => {
-      lines.push(`| **${repo}** | Open source project | [View Repository](https://github.com/${username}/${repo}) |`);
+      l.push(`| **${repo}** | Open source project | [View Repository](https://github.com/${username}/${repo}) |`);
     });
-    lines.push('');
-    lines.push(`---\n`);
+    l.push('');
+    l.push(`---\n`);
+    blocks.set('projects', l.join('\n'));
   }
 
-  // ═══════════════════════════════════════
-  // CONTACT / SOCIALS: Professional style
-  // ═══════════════════════════════════════
-  const hasSocials = socials.github || socials.linkedin || socials.twitter || socials.portfolio || socials.email;
-  if (hasSocials) {
-    lines.push(`## Contact & Professional Networks\n`);
-    lines.push(`<p align="center">`);
-
-    const socialBadges: string[] = [];
-    if (socials.linkedin) socialBadges.push(`  <a href="https://linkedin.com/in/${socials.linkedin}"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn" /></a>`);
-    if (socials.github) socialBadges.push(`  <a href="https://github.com/${socials.github}"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" /></a>`);
-    if (socials.portfolio) socialBadges.push(`  <a href="${socials.portfolio.startsWith('http') ? socials.portfolio : 'https://' + socials.portfolio}"><img src="https://img.shields.io/badge/Portfolio-004182?style=for-the-badge&logo=google-chrome&logoColor=white" alt="Portfolio" /></a>`);
-    if (socials.email) socialBadges.push(`  <a href="mailto:${socials.email}"><img src="https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="Email" /></a>`);
-    if (socials.twitter) socialBadges.push(`  <a href="https://twitter.com/${socials.twitter}"><img src="https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" alt="Twitter" /></a>`);
-
-    lines.push(socialBadges.join('\n'));
-    lines.push(`</p>\n`);
-    lines.push(`---\n`);
+  // SOCIALS
+  {
+    const hasSocials = socials.github || socials.linkedin || socials.twitter || socials.portfolio || socials.email;
+    if (hasSocials) {
+      const l: string[] = [];
+      l.push(`## Contact & Professional Networks\n`);
+      l.push(`<p align="center">`);
+      const socialBadges: string[] = [];
+      if (socials.linkedin) socialBadges.push(`  <a href="https://linkedin.com/in/${socials.linkedin}"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn" /></a>`);
+      if (socials.github) socialBadges.push(`  <a href="https://github.com/${socials.github}"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" /></a>`);
+      if (socials.portfolio) socialBadges.push(`  <a href="${socials.portfolio.startsWith('http') ? socials.portfolio : 'https://' + socials.portfolio}"><img src="https://img.shields.io/badge/Portfolio-004182?style=for-the-badge&logo=google-chrome&logoColor=white" alt="Portfolio" /></a>`);
+      if (socials.email) socialBadges.push(`  <a href="mailto:${socials.email}"><img src="https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="Email" /></a>`);
+      if (socials.twitter) socialBadges.push(`  <a href="https://twitter.com/${socials.twitter}"><img src="https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" alt="Twitter" /></a>`);
+      l.push(socialBadges.join('\n'));
+      l.push(`</p>\n`);
+      l.push(`---\n`);
+      blocks.set('socials', l.join('\n'));
+    }
   }
 
-  // ═══════════════════════════════════════
-  // VISITOR COUNTER
-  // ═══════════════════════════════════════
-  if (c.showVisitorCounter) {
-    lines.push(`<p align="center">`);
-    lines.push(`  <img src="https://komarev.com/ghpvc/?username=${username}&style=flat-square&color=0077B5" alt="Profile Views" />`);
-    lines.push(`</p>\n`);
+  // VISITOR
+  {
+    const l: string[] = [];
+    l.push(`<p align="center">`);
+    l.push(`  <img src="https://komarev.com/ghpvc/?username=${username}&style=flat-square&color=0077B5" alt="Profile Views" />`);
+    l.push(`</p>\n`);
+    blocks.set('visitor-counter', l.join('\n'));
   }
 
-  // ═══════════════════════════════════════
-  // FOOTER
-  // ═══════════════════════════════════════
-  lines.push(`<p align="center">`);
-  lines.push(`  <em>Open to new opportunities and collaborations. Feel free to reach out.</em>`);
-  lines.push(`</p>`);
+  const body = assembleSections(blocks, input.enabledSections, input.sectionOrder, definition.sectionsSpec);
 
-  return lines.join('\n');
+  const footer = [
+    `<p align="center">`,
+    `  <em>Open to new opportunities and collaborations. Feel free to reach out.</em>`,
+    `</p>`,
+  ].join('\n');
+
+  return body + '\n' + footer;
 };

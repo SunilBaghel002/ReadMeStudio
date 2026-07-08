@@ -295,6 +295,33 @@ export const DEFAULT_SECTIONS = (username: string, name: string, bio: string): B
       },
     },
   },
+  {
+    id: 'activity-graph',
+    type: 'activity-graph',
+    title: 'Contribution Graph',
+    isVisible: false,
+    config: {
+      'activity-graph': {},
+    },
+  },
+  {
+    id: 'snake-game',
+    type: 'snake-game',
+    title: 'Contribution Snake',
+    isVisible: false,
+    config: {
+      'snake-game': {},
+    },
+  },
+  {
+    id: 'goals-list',
+    type: 'goals-list',
+    title: 'Goals Table',
+    isVisible: false,
+    config: {
+      'goals-list': {},
+    },
+  },
 ];
 
 const THEME_ACCENTS: Record<string, { accent: string; statsTheme: string }> = {
@@ -630,6 +657,37 @@ export const useBuilderStore = create<BuilderStore>()(
         const def = getThemeDefinition(themeId);
         if (!def) return;
 
+        const state = get();
+        const username = state.username || '';
+        const name = state.profile?.name || username;
+        const bio = state.profile?.bio || '';
+
+        const defaultSectionsMap = DEFAULT_SECTIONS(username, name, bio).reduce((acc, sec) => {
+          acc[sec.type] = sec;
+          return acc;
+        }, {} as Record<SectionType, BuilderSection>);
+
+        const spec = def.sectionsSpec;
+        const enabledSet = new Set<SectionType>(spec?.enabled ?? []);
+
+        const orderedTypes = spec
+          ? [
+              ...spec.order,
+              ...Object.keys(defaultSectionsMap).filter(
+                (type) => !spec.order.includes(type as SectionType)
+              ),
+            ] as SectionType[]
+          : Object.keys(defaultSectionsMap) as SectionType[];
+
+        const sections = orderedTypes.map((type) => {
+          const defaultSec = defaultSectionsMap[type];
+          if (!defaultSec) return null;
+          return {
+            ...defaultSec,
+            isVisible: spec ? enabledSet.has(type) : defaultSec.isVisible,
+          };
+        }).filter(Boolean) as BuilderSection[];
+
         set({
           selectedTemplate: themeId,
           selectedThemeId: themeId,
@@ -638,9 +696,9 @@ export const useBuilderStore = create<BuilderStore>()(
           statsCardTheme: def.statsTheme,
           themeCustomization: { ...def.defaultConfig },
           canvasBgColor: def.previewColors.background,
+          sections,
         });
 
-        // Re-inject user's GitHub data if already loaded
         const currentData = get().githubData;
         if (currentData) {
           get().injectGitHubData(currentData);
@@ -685,6 +743,15 @@ export const useBuilderStore = create<BuilderStore>()(
         const workingOnSection = state.sections.find(s => s.type === 'working-on');
         const workingOn = workingOnSection?.config?.['working-on'];
 
+        // Gather typing lines
+        const typingSection = state.sections.find(s => s.type === 'typing');
+        const typingLines = typingSection?.config?.typing?.lines || [];
+
+        const enabledSections = new Set<SectionType>(
+          state.sections.filter(s => s.isVisible).map(s => s.type)
+        );
+        const sectionOrder = state.sections.map(s => s.type);
+
         return await generateThemeMarkdown(state.selectedThemeId, {
           username: state.username,
           name: state.profile?.name || state.username,
@@ -699,6 +766,10 @@ export const useBuilderStore = create<BuilderStore>()(
           learning: workingOn?.learning,
           collab: workingOn?.collab,
           baseUrl: hostUrl,
+          enabledSections,
+          sectionOrder,
+          typingLines,
+          statsTheme: state.statsCardTheme,
         });
       },
 

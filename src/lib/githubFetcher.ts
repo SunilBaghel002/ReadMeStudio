@@ -491,6 +491,43 @@ export async function fetchGitHubData(username: string): Promise<ExtendedGitHubD
     twitterUsername: rawProfile.twitter_username || null,
   };
 
+  // Fetch existing README to suggest upgrades
+  let existingReadmeAnalysis = {
+    hasReadme: false,
+    detectedStyle: 'None',
+    recommendedThemeId: 'gradient-wave',
+  };
+
+  try {
+    const readmeRes = await fetch(`https://api.github.com/repos/${username}/${username}/readme`, { headers, next: { revalidate: 3600 } });
+    if (readmeRes.ok) {
+      const readmeJson = await readmeRes.json();
+      const rawContent = Buffer.from(readmeJson.content, 'base64').toString('utf8');
+      
+      existingReadmeAnalysis.hasReadme = true;
+      
+      // Analyze the raw markdown content
+      if (rawContent.includes('capsule-render')) {
+        existingReadmeAnalysis.detectedStyle = 'Banner-based Creative';
+        existingReadmeAnalysis.recommendedThemeId = 'neon-synthwave';
+      } else if (rawContent.includes('github-readme-stats') || rawContent.includes('streak-stats')) {
+        existingReadmeAnalysis.detectedStyle = 'Standard Stats-heavy';
+        existingReadmeAnalysis.recommendedThemeId = 'terminal-hacker';
+      } else if (rawContent.includes('github-profile-trophy')) {
+        existingReadmeAnalysis.detectedStyle = 'Trophy Collector';
+        existingReadmeAnalysis.recommendedThemeId = 'dark-elegance';
+      } else if (rawContent.length < 300) {
+        existingReadmeAnalysis.detectedStyle = 'Minimalist text';
+        existingReadmeAnalysis.recommendedThemeId = 'gradient-wave';
+      } else {
+        existingReadmeAnalysis.detectedStyle = 'Classic Structured';
+        existingReadmeAnalysis.recommendedThemeId = 'creative-portfolio';
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching/analyzing existing README:', err);
+  }
+
   const aggregatedData: ExtendedGitHubData = {
     profile,
     stats: {
@@ -513,6 +550,7 @@ export async function fetchGitHubData(username: string): Promise<ExtendedGitHubD
     topRepos: topRepositories,
     recentActivity: [] as GitHubEvent[],
     rawReposData: reposNodes, // Cache all repos (forked + owned)
+    existingReadmeAnalysis,
   };
 
   localCache[cacheKey] = {

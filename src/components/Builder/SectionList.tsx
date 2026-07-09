@@ -196,14 +196,14 @@ const SortableSectionItem = React.memo(function SortableSectionItem({
             onToggle(e);
           }}
           className={cn(
-            'w-8 h-4 rounded-full relative transition-colors duration-200 shrink-0 cursor-pointer',
-            section.isVisible ? 'bg-[#7c3aed]' : 'bg-[#30363D]'
+            'w-9 h-5 rounded-full relative transition-colors duration-200 shrink-0 cursor-pointer outline-none focus:ring-1 focus:ring-indigo-500/30',
+            section.isVisible ? 'bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.4)]' : 'bg-zinc-850 border border-white/5'
           )}
           title={section.isVisible ? 'Hide Section' : 'Show Section'}
         >
           <span
             className={cn(
-              'absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform duration-200 shadow-sm block',
+              'absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform duration-200 shadow-sm block',
               section.isVisible ? 'translate-x-4' : 'translate-x-0'
             )}
           />

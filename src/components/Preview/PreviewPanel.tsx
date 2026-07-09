@@ -175,6 +175,8 @@ export default function PreviewPanel() {
   const [markdown, setMarkdown] = useState('');
   const deferredMarkdown = useDeferredValue(markdown);
 
+  const addToast = useBuilderStore((state) => state.addToast);
+
   useEffect(() => {
     let active = true;
     const timer = setTimeout(async () => {
@@ -199,6 +201,7 @@ export default function PreviewPanel() {
       colors: ['#3b82f6', '#8b5cf6'],
       origin: { y: 0.8 },
     });
+    addToast('Markdown code copied to clipboard! Go paste it in GitHub! 🚀', 'success');
     setTimeout(() => setCopied(false), 2000);
   };
 

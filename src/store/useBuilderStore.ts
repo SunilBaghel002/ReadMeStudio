@@ -54,6 +54,7 @@ interface BuilderStore {
   cardBgColor: string;
   cardBorderColor: string;
   cardBgOpacity: number;
+  toasts: Array<{ id: string; message: string; type: 'success' | 'info' | 'warning' }>;
 
   // Actions
   setHasHydrated: (val: boolean) => void;
@@ -76,6 +77,8 @@ interface BuilderStore {
   setCardBgColor: (color: string) => void;
   setCardBorderColor: (color: string) => void;
   setCardBgOpacity: (opacity: number) => void;
+  addToast: (message: string, type?: 'success' | 'info' | 'warning') => void;
+  removeToast: (id: string) => void;
   resetStore: () => void;
   loadTemplate: (templateType: string) => void;
   loadTheme: (themeId: string) => void;
@@ -376,6 +379,7 @@ export const useBuilderStore = create<BuilderStore>()(
       cardBgColor: '#0d0c1d',
       cardBorderColor: '#27272a',
       cardBgOpacity: 0.6,
+      toasts: [],
 
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
       setUsername: (username) => set({ username }),
@@ -383,6 +387,22 @@ export const useBuilderStore = create<BuilderStore>()(
       setCardBgColor: (cardBgColor) => set({ cardBgColor }),
       setCardBorderColor: (cardBorderColor) => set({ cardBorderColor }),
       setCardBgOpacity: (cardBgOpacity) => set({ cardBgOpacity }),
+
+      addToast: (message, type = 'success') => {
+        const id = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        set((state) => ({
+          toasts: [...state.toasts, { id, message, type }],
+        }));
+        setTimeout(() => {
+          get().removeToast(id);
+        }, 3500);
+      },
+
+      removeToast: (id) => {
+        set((state) => ({
+          toasts: state.toasts.filter((t) => t.id !== id),
+        }));
+      },
 
       fetchUserData: async (username) => {
         set({ isLoading: true, error: null });
@@ -408,11 +428,14 @@ export const useBuilderStore = create<BuilderStore>()(
 
           // Inject fetched GitHub data into the active builder sections configuration
           get().injectGitHubData(data);
+          
+          get().addToast('Successfully fetched your GitHub profile data! 🚀', 'success');
 
           return true;
         } catch (error: any) {
           console.error(error);
           set({ isLoading: false, error: error.message || 'Something went wrong' });
+          get().addToast(`Lookup Failure: ${error.message || 'Something went wrong'}`, 'warning');
           return false;
         }
       },
@@ -703,6 +726,8 @@ export const useBuilderStore = create<BuilderStore>()(
         if (currentData) {
           get().injectGitHubData(currentData);
         }
+
+        get().addToast(`Successfully applied theme: "${def.name}"! 🎨`, 'success');
       },
 
       setSelectedThemeId: (id: string) => {

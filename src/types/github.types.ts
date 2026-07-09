@@ -46,6 +46,12 @@ export interface GitHubEvent {
   details: string;
 }
 
+export interface ExistingReadmeAnalysis {
+  hasReadme: boolean;
+  detectedStyle: string;
+  recommendedThemeId: string;
+}
+
 export interface GitHubStatsData {
   profile: GitHubProfile;
   stats: {
@@ -60,6 +66,7 @@ export interface GitHubStatsData {
   streak: ContributionStreak;
   topRepos: GitHubRepo[];
   recentActivity: GitHubEvent[];
+  existingReadmeAnalysis?: ExistingReadmeAnalysis;
 }
 
 export type SectionType =

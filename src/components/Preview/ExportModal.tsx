@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { X, Copy, Check, Download, BookOpen, AlertCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
+import { useBuilderStore } from '@/store/useBuilderStore';
+
 interface ExportModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -27,6 +29,8 @@ export default function ExportModal({ isOpen, onClose, markdown }: ExportModalPr
       origin: { y: 0.6 },
       colors: ['#3b82f6', '#8b5cf6', '#ec4899'],
     });
+
+    useBuilderStore.getState().addToast('Markdown code copied to clipboard! Go paste it in GitHub! 🚀', 'success');
 
     setTimeout(() => setCopied(false), 2000);
   };

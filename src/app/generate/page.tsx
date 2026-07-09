@@ -31,13 +31,39 @@ const INITIAL_STEPS: LoadingStep[] = [
   { label: 'Preparing themes...', status: 'pending' },
 ];
 
+const FUN_MESSAGES = [
+  'Bribing GitHub API rate limiter...',
+  'Counting your green squares... looks very impressive! 🟩',
+  'Polishing SVG trophies and ranks...',
+  'NextJS is compiling... (don\'t tell webpack)',
+  'Compiling CSS layouts... adding sparkles ✨',
+  'Analyzing contribution patterns...',
+  'Your profile is going to look amazing! 🚀',
+  'Analyzing commit messages... (found "fix typo" 17 times)',
+  'Optimizing responsive alignments...',
+  'Generating themes with your real data...'
+];
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [usernameInput, setUsernameInput] = useState('');
   const [shake, setShake] = useState(false);
   const [steps, setSteps] = useState<LoadingStep[]>(INITIAL_STEPS);
   const [animationIndex, setAnimationIndex] = useState(-1);
+  const [funMessage, setFunMessage] = useState(FUN_MESSAGES[0]);
   const animationTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (animationIndex === -1) return;
+    
+    let msgIdx = 0;
+    const msgInterval = setInterval(() => {
+      msgIdx = (msgIdx + 1) % FUN_MESSAGES.length;
+      setFunMessage(FUN_MESSAGES[msgIdx]);
+    }, 1500);
+
+    return () => clearInterval(msgInterval);
+  }, [animationIndex]);
   
   const { fetchUserData, isLoading, error, resetStore } = useBuilderStore(useShallow(state => ({
     fetchUserData: state.fetchUserData,
@@ -199,10 +225,24 @@ export default function OnboardingPage() {
               </form>
             ) : (
               /* Loading / Animation State */
-              <div className="w-full flex flex-col items-center space-y-6 py-2">
-                <div className="flex items-center gap-3 text-indigo-400 font-bold text-sm uppercase tracking-widest font-mono">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Syncing stats...</span>
+              <div className="w-full flex flex-col items-center space-y-4 py-2">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-3 text-indigo-400 font-bold text-sm uppercase tracking-widest font-mono">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Syncing stats...</span>
+                  </div>
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={funMessage}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      transition={{ duration: 0.3 }}
+                      className="text-zinc-500 text-[11px] font-mono italic text-center h-4 max-w-sm overflow-hidden"
+                    >
+                      {funMessage}
+                    </motion.p>
+                  </AnimatePresence>
                 </div>
                 
                 {/* Progress Checklist */}

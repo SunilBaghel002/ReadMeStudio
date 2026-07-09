@@ -257,6 +257,75 @@ export default function ThemesPage() {
           
           {/* Progress Indicator */}
           <FlowProgress currentStep="themes" />
+
+          {/* Smart Theme Suggestion Banner */}
+          {githubData?.existingReadmeAnalysis?.hasReadme && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="w-full p-6 rounded-2xl bg-indigo-950/20 border border-indigo-500/20 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4 mb-8 mt-2 overflow-hidden relative"
+            >
+              <div className="absolute -right-16 -top-16 w-36 h-36 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="flex gap-4 items-start md:items-center text-left">
+                <div className="p-3 bg-indigo-500/20 border border-indigo-500/30 rounded-xl text-indigo-400 shrink-0 shadow-lg">
+                  <Sparkles className="h-6 w-6 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-bold text-sm">Existing Profile README Detected!</span>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 uppercase">
+                      {githubData.existingReadmeAnalysis?.detectedStyle || 'Classic'} Style
+                    </span>
+                  </div>
+                  <p className="text-zinc-400 text-xs mt-1 font-light max-w-2xl">
+                    We scanned your profile repository and found your current README. Try upgrading to our <strong className="text-indigo-300 font-bold font-mono">"{THEME_LIST.find(t => t.id === githubData.existingReadmeAnalysis?.recommendedThemeId)?.name || 'Gradient Wave'}"</strong> theme to give your profile a modern, premium look!
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleConfirmSelect(githubData.existingReadmeAnalysis?.recommendedThemeId || 'gradient-wave')}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold text-xs shadow-lg hover:shadow-indigo-500/25 transition-all shrink-0 cursor-pointer flex items-center gap-1.5"
+              >
+                <span>Upgrade Now</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </motion.div>
+          )}
+
+          {!githubData?.existingReadmeAnalysis?.hasReadme && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="w-full p-6 rounded-2xl bg-zinc-950/45 border border-white/5 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4 mb-8 mt-2 overflow-hidden relative"
+            >
+              <div className="absolute -right-16 -top-16 w-36 h-36 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
+              <div className="flex gap-4 items-start md:items-center text-left">
+                <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl text-purple-400 shrink-0 shadow-lg">
+                  <Crown className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-bold text-sm">Fresh Profile README Journey!</span>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 uppercase">
+                      New User
+                    </span>
+                  </div>
+                  <p className="text-zinc-400 text-xs mt-1 font-light max-w-2xl">
+                    You don't have a profile README yet. We recommend our flagship <strong className="text-purple-300 font-bold">"Gradient Wave"</strong> theme to automatically construct a fully responsive, rich profile README.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleConfirmSelect('gradient-wave')}
+                className="px-5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 hover:bg-zinc-850 hover:border-white/20 text-white font-bold text-xs transition-all shrink-0 cursor-pointer flex items-center gap-1.5"
+              >
+                <span>Get Flagship Style</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </motion.div>
+          )}
           
           {/* Header Title */}
           <div className="text-center max-w-2xl mt-4 mb-10">
@@ -324,7 +393,7 @@ export default function ThemesPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: themeIdx * 0.05 }}
                   className={cn(
-                    'p-5 rounded-2xl border text-left flex flex-col justify-between transition-all duration-300 relative group bg-zinc-950/45 border-white/5 hover:border-indigo-500/50 hover:bg-zinc-950/70 hover:shadow-[0_0_30px_rgba(124,58,237,0.12)] hover:scale-[1.01]'
+                    'p-5 rounded-2xl border text-left flex flex-col justify-between transition-all duration-300 relative group bg-zinc-950/45 border-white/5 hover:border-indigo-500/50 hover:bg-zinc-950/70 hover:shadow-[0_0_30px_rgba(124,58,237,0.12)] hover:scale-[1.01] active:scale-[0.98]'
                   )}
                 >
                   {/* Top color gradient highlight */}
@@ -335,7 +404,10 @@ export default function ThemesPage() {
 
                   <div>
                     {/* Live Preview Screen Container */}
-                    <div className="h-48 w-full bg-[#0d1117] border border-white/5 rounded-xl overflow-hidden relative group-hover:border-indigo-500/30 transition-all select-none">
+                    <div 
+                      onClick={() => handleOpenPreview(theme.id)}
+                      className="h-48 w-full bg-[#0d1117] border border-white/5 rounded-xl overflow-hidden relative group-hover:border-indigo-500/30 transition-all select-none cursor-pointer"
+                    >
                       {themePreviews[theme.id] ? (
                         <div className="w-[222%] h-[222%] scale-[0.45] origin-top-left p-6 pointer-events-none overflow-hidden select-none">
                           <ThemePreviewRenderer

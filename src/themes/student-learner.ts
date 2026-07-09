@@ -1,7 +1,7 @@
 import { ThemeDefinition, ThemeGenerator, ThemeGeneratorInput } from '@/types/theme.types';
 import { SKILL_BADGES } from '@/lib/markdown';
 import type { SectionType } from '@/types/github.types';
-import { assembleSections } from './assemble';
+import { assembleSections, getStatsUrl, getStreakUrl, getLanguagesUrl, getTrophiesUrl } from './assemble';
 
 export const definition: ThemeDefinition = {
   id: 'student-learner',
@@ -139,7 +139,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 📊 My GitHub Stats\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=${statsTheme}&hide_border=true&show_icons=true&include_all_commits=true" alt="Stats" />`);
+    l.push(`  <img src="${getStatsUrl(input, 'dracula')}" alt="Stats" />`);
     l.push(`</p>\n`);
     l.push(`---\n`);
     blocks.set('stats', l.join('\n'));
@@ -150,7 +150,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 🔥 Commit Streak\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=${statsTheme}&hide_border=true" alt="Streak" />`);
+    l.push(`  <img src="${getStreakUrl(input, 'dracula')}" alt="Streak" />`);
     l.push(`</p>\n`);
     l.push(`---\n`);
     blocks.set('streak', l.join('\n'));
@@ -161,7 +161,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 📋 Most Used Languages\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/languages?username=${username}&theme=${statsTheme}&hide_border=true&langs_count=6" alt="Languages" />`);
+    l.push(`  <img src="${getLanguagesUrl(input, 'dracula')}" alt="Languages" />`);
     l.push(`</p>\n`);
     l.push(`---\n`);
     blocks.set('languages', l.join('\n'));
@@ -172,7 +172,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 🏆 Achievements Board\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/trophies?username=${username}&theme=${statsTheme}&no_frame=true&no_bg=true" alt="Trophies" />`);
+    l.push(`  <img src="${getTrophiesUrl(input, 'dracula')}" alt="Trophies" />`);
     l.push(`</p>\n`);
     l.push(`---\n`);
     blocks.set('trophies', l.join('\n'));

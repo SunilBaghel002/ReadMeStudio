@@ -1,7 +1,7 @@
 import { ThemeDefinition, ThemeGenerator, ThemeGeneratorInput } from '@/types/theme.types';
 import { SKILL_BADGES } from '@/lib/markdown';
 import type { SectionType } from '@/types/github.types';
-import { assembleSections } from './assemble';
+import { assembleSections, getStatsUrl, getStreakUrl, getLanguagesUrl, getTrophiesUrl } from './assemble';
 
 export const definition: ThemeDefinition = {
   id: 'opensource-hero',
@@ -88,7 +88,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 📊 Contribution Statistics\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=${statsTheme}&hide_border=true&show_icons=true&include_all_commits=true" alt="GitHub Stats" width="55%" />`);
+    l.push(`  <img src="${getStatsUrl(input, 'radical')}" alt="GitHub Stats" />`);
     l.push(`</p>\n`);
     l.push(`---\n`);
     blocks.set('stats', l.join('\n'));
@@ -99,7 +99,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 🔥 Commit Streak\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=${statsTheme}&hide_border=true" alt="Streak" width="55%" />`);
+    l.push(`  <img src="${getStreakUrl(input, 'radical')}" alt="Streak" />`);
     l.push(`</p>\n`);
     l.push(`---\n`);
     blocks.set('streak', l.join('\n'));
@@ -110,7 +110,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 📋 Most Used Languages\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/languages?username=${username}&theme=${statsTheme}&hide_border=true&langs_count=10" alt="Languages" />`);
+    l.push(`  <img src="${getLanguagesUrl(input, 'radical')}" alt="Languages" />`);
     l.push(`</p>\n`);
     l.push(`---\n`);
     blocks.set('languages', l.join('\n'));
@@ -132,7 +132,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 🏆 Open Source Achievements\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/trophies?username=${username}&theme=radical&no_frame=false&no_bg=false&column_count=6" alt="Trophies" />`);
+    l.push(`  <img src="${getTrophiesUrl(input, 'radical')}" alt="Trophies" />`);
     l.push(`</p>\n`);
     l.push(`---\n`);
     blocks.set('trophies', l.join('\n'));

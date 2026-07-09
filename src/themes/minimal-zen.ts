@@ -1,6 +1,6 @@
 import { ThemeDefinition, ThemeGenerator, ThemeGeneratorInput } from '@/types/theme.types';
 import type { SectionType } from '@/types/github.types';
-import { assembleSections } from './assemble';
+import { assembleSections, getStatsUrl, getStreakUrl, getLanguagesUrl, getTrophiesUrl } from './assemble';
 
 export const definition: ThemeDefinition = {
   id: 'minimal-zen',
@@ -79,9 +79,27 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
   {
     const l: string[] = [];
     l.push(`### Stats\n`);
-    l.push(`<img src="${baseUrl}/api/github/stats?username=${username}&theme=default&hide_border=true&show_icons=true&bg_color=00000000&title_color=24292e&text_color=586069&icon_color=0366d6" alt="Stats" />\n`);
+    l.push(`<img src="${getStatsUrl(input, 'default')}" alt="Stats" />\n`);
     l.push('');
     blocks.set('stats', l.join('\n'));
+  }
+
+  // STREAK
+  {
+    const l: string[] = [];
+    l.push(`### Streak\n`);
+    l.push(`<img src="${getStreakUrl(input, 'default')}" alt="Streak" />\n`);
+    l.push('');
+    blocks.set('streak', l.join('\n'));
+  }
+
+  // LANGUAGES
+  {
+    const l: string[] = [];
+    l.push(`### Languages\n`);
+    l.push(`<img src="${getLanguagesUrl(input, 'default')}" alt="Languages" />\n`);
+    l.push('');
+    blocks.set('languages', l.join('\n'));
   }
 
   // TROPHIES
@@ -89,7 +107,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`### Trophies\n`);
     l.push(`<p align="left">`);
-    l.push(`  <img src="${baseUrl}/api/github/trophies?username=${username}&theme=${statsTheme}&no_frame=true&no_bg=true" alt="Trophies" />`);
+    l.push(`  <img src="${getTrophiesUrl(input, 'default')}" alt="Trophies" />`);
     l.push(`</p>\n`);
     blocks.set('trophies', l.join('\n'));
   }

@@ -1,7 +1,7 @@
 import { ThemeDefinition, ThemeGenerator, ThemeGeneratorInput } from '@/types/theme.types';
 import { SKILL_BADGES } from '@/lib/markdown';
 import type { SectionType } from '@/types/github.types';
-import { assembleSections } from './assemble';
+import { assembleSections, getStatsUrl, getStreakUrl, getLanguagesUrl, getTrophiesUrl } from './assemble';
 
 export const definition: ThemeDefinition = {
   id: 'gradient-wave',
@@ -154,7 +154,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 📊 GitHub Stats\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="https://github-readme-stats.shion.dev/api?username=${username}&theme=${statsTheme}&hide_border=true&include_all_commits=true&count_private=true" alt="GitHub Stats" />`);
+    l.push(`  <img src="${getStatsUrl(input, 'dracula')}" alt="GitHub Stats" />`);
     l.push(`</p>\n`);
     l.push(`---\n`);
     blocks.set('stats', l.join('\n'));
@@ -165,7 +165,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 🔥 Commit Streak\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="https://streak-stats.demolab.com/?user=${username}&theme=${statsTheme}&hide_border=true" alt="GitHub Streak" />`);
+    l.push(`  <img src="${getStreakUrl(input, 'dracula')}" alt="GitHub Streak" />`);
     l.push(`</p>\n`);
     l.push(`---\n`);
     blocks.set('streak', l.join('\n'));
@@ -176,7 +176,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 📋 Most Used Languages\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="https://github-readme-stats.shion.dev/api/top-langs/?username=${username}&theme=${statsTheme}&hide_border=true&include_all_commits=true&count_private=true&layout=compact" alt="Top Languages" />`);
+    l.push(`  <img src="${getLanguagesUrl(input, 'dracula')}" alt="Top Languages" />`);
     l.push(`</p>\n`);
     l.push(`---\n`);
     blocks.set('languages', l.join('\n'));
@@ -187,7 +187,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 🏆 GitHub Trophies\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="https://github-profile-trophy.vercel.app/?username=${username}&theme=${statsTheme}&no-frame=true&no-bg=true&margin-w=4&margin-h=4" alt="Trophies" />`);
+    l.push(`  <img src="${getTrophiesUrl(input, 'dracula')}" alt="Trophies" />`);
     l.push(`</p>\n`);
     l.push(`---\n`);
     blocks.set('trophies', l.join('\n'));

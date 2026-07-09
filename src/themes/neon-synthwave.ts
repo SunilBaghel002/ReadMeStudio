@@ -1,7 +1,7 @@
 import { ThemeDefinition, ThemeGenerator, ThemeGeneratorInput } from '@/types/theme.types';
 import { SKILL_BADGES } from '@/lib/markdown';
 import type { SectionType } from '@/types/github.types';
-import { assembleSections } from './assemble';
+import { assembleSections, getStatsUrl, getStreakUrl, getLanguagesUrl, getTrophiesUrl } from './assemble';
 
 export const definition: ThemeDefinition = {
   id: 'neon-synthwave',
@@ -102,7 +102,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 🌅 GitHub Stats 🌅\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=${statsTheme}&hide_border=false&border_color=FF006E&show_icons=true&include_all_commits=true" alt="Stats" />`);
+    l.push(`  <img src="${getStatsUrl(input, 'synthwave')}" alt="Stats" />`);
     l.push(`</p>\n`);
     l.push(NEON_DIV);
     blocks.set('stats', l.join('\n'));
@@ -113,7 +113,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 🔥 Commit Streak 🔥\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=${statsTheme}&hide_border=false&border_color=00F5FF" alt="Streak" />`);
+    l.push(`  <img src="${getStreakUrl(input, 'synthwave')}" alt="Streak" />`);
     l.push(`</p>\n`);
     l.push(NEON_DIV);
     blocks.set('streak', l.join('\n'));
@@ -124,7 +124,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 📋 Languages Used 📋\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/languages?username=${username}&theme=${statsTheme}&hide_border=false&border_color=8338EC&langs_count=8" alt="Languages" />`);
+    l.push(`  <img src="${getLanguagesUrl(input, 'synthwave')}" alt="Languages" />`);
     l.push(`</p>\n`);
     l.push(NEON_DIV);
     blocks.set('languages', l.join('\n'));
@@ -135,7 +135,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 🏆 Neon Trophies 🏆\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/trophies?username=${username}&theme=radical&no_frame=false&no_bg=false&column_count=4" alt="Trophies" />`);
+    l.push(`  <img src="${getTrophiesUrl(input, 'synthwave')}" alt="Trophies" />`);
     l.push(`</p>\n`);
     l.push(NEON_DIV);
     blocks.set('trophies', l.join('\n'));

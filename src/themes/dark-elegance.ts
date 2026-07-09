@@ -1,7 +1,7 @@
 import { ThemeDefinition, ThemeGenerator, ThemeGeneratorInput } from '@/types/theme.types';
 import { SKILL_BADGES } from '@/lib/markdown';
 import type { SectionType } from '@/types/github.types';
-import { assembleSections } from './assemble';
+import { assembleSections, getStatsUrl, getStreakUrl, getLanguagesUrl, getTrophiesUrl } from './assemble';
 
 export const definition: ThemeDefinition = {
   id: 'dark-elegance',
@@ -112,7 +112,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## ✧ Metrics\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=${statsTheme}&hide_border=true&show_icons=true&include_all_commits=true&icon_color=FFD700&title_color=FFD700" alt="Stats" />`);
+    l.push(`  <img src="${getStatsUrl(input, 'tokyonight')}" alt="Stats" />`);
     l.push(`</p>\n`);
     l.push(ELEGANT_DIV);
     blocks.set('stats', l.join('\n'));
@@ -123,7 +123,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## ✧ Streak Metrics\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=${statsTheme}&hide_border=true&ring=FFD700&fire=FFD700&currStreakLabel=FFD700" alt="Streak" />`);
+    l.push(`  <img src="${getStreakUrl(input, 'tokyonight')}" alt="Streak" />`);
     l.push(`</p>\n`);
     l.push(ELEGANT_DIV);
     blocks.set('streak', l.join('\n'));
@@ -134,7 +134,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## ✧ Language Distribution\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/languages?username=${username}&theme=${statsTheme}&hide_border=true&langs_count=8&icon_color=FFD700&title_color=FFD700" alt="Languages" />`);
+    l.push(`  <img src="${getLanguagesUrl(input, 'tokyonight')}" alt="Languages" />`);
     l.push(`</p>\n`);
     l.push(ELEGANT_DIV);
     blocks.set('languages', l.join('\n'));
@@ -145,7 +145,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## ✧ Achievements & Honors\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/trophies?username=${username}&theme=${statsTheme}&no_frame=true&no_bg=true" alt="Trophies" />`);
+    l.push(`  <img src="${getTrophiesUrl(input, 'tokyonight')}" alt="Trophies" />`);
     l.push(`</p>\n`);
     l.push(ELEGANT_DIV);
     blocks.set('trophies', l.join('\n'));

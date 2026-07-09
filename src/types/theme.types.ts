@@ -63,6 +63,7 @@ export interface ThemeGeneratorInput {
   sectionOrder?: SectionType[];
   typingLines?: string[];
   statsTheme?: string;
+  sectionConfigs?: Record<string, any>;
 }
 
 export type ThemeGenerator = (input: ThemeGeneratorInput) => string;

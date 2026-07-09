@@ -1,7 +1,7 @@
 import { ThemeDefinition, ThemeGenerator, ThemeGeneratorInput } from '@/types/theme.types';
 import { SKILL_BADGES } from '@/lib/markdown';
 import type { SectionType } from '@/types/github.types';
-import { assembleSections } from './assemble';
+import { assembleSections, getStatsUrl, getStreakUrl, getLanguagesUrl, getTrophiesUrl } from './assemble';
 
 export const definition: ThemeDefinition = {
   id: 'gamer-dev',
@@ -125,7 +125,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 📊 Player Stats & Achievements\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/stats?username=${username}&theme=${statsTheme}&hide_border=true&show_icons=true&include_all_commits=true" alt="Player Stats" />`);
+    l.push(`  <img src="${getStatsUrl(input, 'radical')}" alt="Player Stats" />`);
     l.push(`</p>\n`);
     l.push(GAMER_DIV);
     blocks.set('stats', l.join('\n'));
@@ -136,7 +136,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 🔥 Combo Streak\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/streak?username=${username}&theme=${statsTheme}&hide_border=true" alt="Combo Streak" />`);
+    l.push(`  <img src="${getStreakUrl(input, 'radical')}" alt="Combo Streak" />`);
     l.push(`</p>\n`);
     l.push(GAMER_DIV);
     blocks.set('streak', l.join('\n'));
@@ -147,7 +147,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 📋 Skill Distribution\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/languages?username=${username}&theme=${statsTheme}&hide_border=true&langs_count=8" alt="Skill Distribution" />`);
+    l.push(`  <img src="${getLanguagesUrl(input, 'radical')}" alt="Skill Distribution" />`);
     l.push(`</p>\n`);
     l.push(GAMER_DIV);
     blocks.set('languages', l.join('\n'));
@@ -158,7 +158,7 @@ export const generate: ThemeGenerator = (input: ThemeGeneratorInput): string => 
     const l: string[] = [];
     l.push(`## 🏆 Achievements Unlocked\n`);
     l.push(`<p align="center">`);
-    l.push(`  <img src="${baseUrl}/api/github/trophies?username=${username}&theme=radical&no_frame=false&no_bg=false&column_count=4" alt="Achievements" />`);
+    l.push(`  <img src="${getTrophiesUrl(input, 'radical')}" alt="Achievements" />`);
     l.push(`</p>\n`);
     l.push(`<p align="center">🎮━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🎮</p>\n`);
     blocks.set('trophies', l.join('\n'));

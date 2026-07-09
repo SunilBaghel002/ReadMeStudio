@@ -752,6 +752,11 @@ export const useBuilderStore = create<BuilderStore>()(
         );
         const sectionOrder = state.sections.map(s => s.type);
 
+        const sectionConfigs = state.sections.reduce((acc, sec) => {
+          acc[sec.type] = sec.config?.[sec.type] || {};
+          return acc;
+        }, {} as Record<string, any>);
+
         return await generateThemeMarkdown(state.selectedThemeId, {
           username: state.username,
           name: state.profile?.name || state.username,
@@ -770,6 +775,7 @@ export const useBuilderStore = create<BuilderStore>()(
           sectionOrder,
           typingLines,
           statsTheme: state.statsCardTheme,
+          sectionConfigs,
         });
       },
 
